@@ -12,6 +12,7 @@ interface SearchAndFilterProps {
 }
 
 const SERVER_OPTIONS: ServerName[] = [
+  'All Servers', 'Multiple Servers', 'Other Server',
   'sip00', 'sip01', 'sip02', 'sip03', 'sip04', 'sip05', 'sip07', 'sip08', 'sip09',
   'sip10', 'sip11', 'sip15', 'sip17', 'sip19', 'sip20', 'sip21', 'sip22', 'sip26',
   'sip27', 'sip28', 'sip29', 'sip30', 'sip32', 'sip33', 'sip35', 'sip37', 'sip45',
@@ -20,7 +21,15 @@ const SERVER_OPTIONS: ServerName[] = [
   'sip205', 'sip206', 'sip207', 'sip208', 'sip209', 'sip210', 'sip212', 'sip213',
   'sip214', 'sip215', 'sip216'
 ]
-const CLIENT_OPTIONS: ClientName[] = ['certis', 'getgo', 'pegasus', 'hisense']
+const CLIENT_OPTIONS: ClientName[] = [
+  'Asmara', 'At Sunrise', 'Best Home', 'Busy Bees SG', 'CBRE', 'Certis', 'Challenger',
+  'Chan Brothers', 'City State', 'DHL Malaysia', 'Dr Anywhere', 'Envac', 'Eversafe',
+  'Getgo', 'hisense', 'HSC Cancer', 'Interwell', 'iSetan', 'KFCPH', 'LHN Parking',
+  'Nippon Paint', 'NTUC Fairprice', 'Nuffield Dental', 'Origin', 'Other Client',
+  'pegasus', 'PLE', 'PMG Asia', 'Scania', 'Skool4Kidz', 'SMG Group/LSI', 'SMG IP',
+  'SMRT', 'Sysmex Malaysia', 'Touch Community', 'Vertex', 'Vistek', 'Webull',
+  'Wong Fong', 'Woosa'
+]
 
 export default function SearchAndFilter({
   searchTerm,
@@ -39,10 +48,10 @@ export default function SearchAndFilter({
         <input
           type="text"
           id="search"
-          placeholder="Search by maintenance number, server, or client..."
+          placeholder="Search by server, client, or reason..."
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#dc3545] focus:border-[#dc3545] outline-none transition-all"
         />
       </div>
       <div className="min-w-[150px]">
@@ -53,7 +62,7 @@ export default function SearchAndFilter({
           id="server-filter"
           value={serverFilter}
           onChange={(e) => onServerFilterChange(e.target.value as ServerName | 'all')}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#dc3545] focus:border-[#dc3545] outline-none transition-all"
         >
           <option value="all">All Servers</option>
           {SERVER_OPTIONS.map((server) => (
@@ -71,12 +80,12 @@ export default function SearchAndFilter({
           id="client-filter"
           value={clientFilter}
           onChange={(e) => onClientFilterChange(e.target.value as ClientName | 'all')}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#dc3545] focus:border-[#dc3545] outline-none transition-all"
         >
           <option value="all">All Clients</option>
           {CLIENT_OPTIONS.map((client) => (
             <option key={client} value={client}>
-              {client.charAt(0).toUpperCase() + client.slice(1)}
+              {client}
             </option>
           ))}
         </select>

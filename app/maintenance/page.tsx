@@ -15,6 +15,7 @@ export default function MaintenancePage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [serverFilter, setServerFilter] = useState<ServerName | 'all'>('all')
   const [clientFilter, setClientFilter] = useState<ClientName | 'all'>('all')
+  const [isCopying, setIsCopying] = useState(false)
 
   useEffect(() => {
     fetchRecords()
@@ -40,11 +41,19 @@ export default function MaintenancePage() {
 
   const handleAdd = () => {
     setEditingRecord(null)
+    setIsCopying(false)
     setShowForm(true)
   }
 
   const handleEdit = (record: MaintenanceRecord) => {
     setEditingRecord(record)
+    setIsCopying(false)
+    setShowForm(true)
+  }
+
+  const handleCopy = (record: MaintenanceRecord) => {
+    setEditingRecord(record)
+    setIsCopying(true)
     setShowForm(true)
   }
 
@@ -61,7 +70,7 @@ export default function MaintenancePage() {
           const urlParts = url.split('/')
           return urlParts[urlParts.length - 1]?.split('?')[0]
         }).filter(Boolean) as string[]
-        
+
         if (fileNames.length > 0) {
           await supabase.storage
             .from('maintenance-proofs')
@@ -85,44 +94,62 @@ export default function MaintenancePage() {
   const handleFormSubmit = () => {
     setShowForm(false)
     setEditingRecord(null)
+    setIsCopying(false)
     fetchRecords()
   }
 
   const handleFormCancel = () => {
     setShowForm(false)
     setEditingRecord(null)
+    setIsCopying(false)
   }
 
   // Filter records based on search, server, and client
   const filteredRecords = records.filter((record) => {
-    const matchesSearch = 
-      record.maintenance_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch =
       record.server_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.client_name.toLowerCase().includes(searchTerm.toLowerCase())
+      record.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.maintenance_reason.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesServer = serverFilter === 'all' || record.server_name === serverFilter
     const matchesClient = clientFilter === 'all' || record.client_name === clientFilter
     return matchesSearch && matchesServer && matchesClient
   })
 
   return (
-    <div className="min-h-screen bg-gray-50 py-4">
-      <div className="w-full mx-auto px-2 sm:px-4 lg:px-6">
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-3 border-b border-gray-200">
-            <div className="flex justify-between items-center">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-                Maintenance Records
-              </h1>
-              <button
-                onClick={handleAdd}
-                className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
-              >
-                Add New Record
-              </button>
+    <div className="min-h-screen bg-slate-50">
+      {/* Premium Header with Brand Gradient */}
+      <div className="premium-bg h-32 sm:h-48 w-full absolute top-0 left-0 z-0"></div>
+
+      <div className="relative z-10 w-full mx-auto px-2 sm:px-4 lg:px-8 py-6 sm:py-10">
+        <div className="bg-white shadow-xl rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="px-6 py-6 border-b border-gray-100 bg-white/50">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
+                  Nautilus Maintenance Record
+                </h1>
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto">
+                {showForm && (
+                  <button
+                    onClick={handleFormCancel}
+                    className="flex-1 sm:flex-none bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-50 transition-all font-semibold shadow-sm text-sm"
+                  >
+                    Cancel
+                  </button>
+                )}
+                <button
+                  onClick={handleAdd}
+                  disabled={showForm}
+                  className="flex-1 sm:flex-none premium-bg text-white px-6 py-2 rounded-xl hover:opacity-90 transition-all font-bold shadow-lg shadow-[#dc3545]/20 text-sm disabled:grayscale disabled:opacity-50"
+                >
+                  {isCopying ? 'Copying...' : editingRecord ? 'Editing...' : 'Add New Record'}
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="p-3 sm:p-4 lg:p-6">
+          <div className="p-4 sm:p-6 lg:p-8">
             <SearchAndFilter
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
@@ -133,28 +160,39 @@ export default function MaintenancePage() {
             />
 
             {showForm && (
-              <div className="mb-6">
+              <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-300">
                 <MaintenanceForm
                   record={editingRecord}
+                  isCopy={isCopying}
                   onSuccess={handleFormSubmit}
                   onCancel={handleFormCancel}
                 />
               </div>
             )}
 
-            {loading ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500">Loading records...</p>
-              </div>
-            ) : (
-              <MaintenanceTable
-                records={filteredRecords}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            )}
+            <div className="relative">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#dc3545] mb-4"></div>
+                  <p className="text-gray-400 font-medium">Refreshing Data...</p>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-gray-100 overflow-hidden">
+                  <MaintenanceTable
+                    records={filteredRecords}
+                    onEdit={handleEdit}
+                    onCopy={handleCopy}
+                    onDelete={handleDelete}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
+
+        <footer className="mt-8 text-center text-gray-400 text-xs font-medium">
+          &copy; {new Date().getFullYear()} Nautilus SIP Pte Ltd.
+        </footer>
       </div>
     </div>
   )

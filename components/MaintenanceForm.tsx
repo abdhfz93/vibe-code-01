@@ -2,15 +2,17 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import { MaintenanceRecord, MaintenanceRecordInput, ServerName, ClientName, MaintenanceReason, Approver, PerformBy, Status } from '@/types/maintenance'
+import { MaintenanceRecord, MaintenanceRecordInput, ServerName, ClientName, MaintenanceReason, Approver, PerformedBy, Status } from '@/types/maintenance'
 
 interface MaintenanceFormProps {
   record?: MaintenanceRecord | null
+  isCopy?: boolean
   onSuccess: () => void
   onCancel: () => void
 }
 
 const SERVER_OPTIONS: ServerName[] = [
+  'All Servers', 'Multiple Servers', 'Other Server',
   'sip00', 'sip01', 'sip02', 'sip03', 'sip04', 'sip05', 'sip07', 'sip08', 'sip09',
   'sip10', 'sip11', 'sip15', 'sip17', 'sip19', 'sip20', 'sip21', 'sip22', 'sip26',
   'sip27', 'sip28', 'sip29', 'sip30', 'sip32', 'sip33', 'sip35', 'sip37', 'sip45',
@@ -19,21 +21,32 @@ const SERVER_OPTIONS: ServerName[] = [
   'sip205', 'sip206', 'sip207', 'sip208', 'sip209', 'sip210', 'sip212', 'sip213',
   'sip214', 'sip215', 'sip216'
 ]
-const CLIENT_OPTIONS: ClientName[] = ['certis', 'getgo', 'pegasus', 'hisense']
-const REASON_OPTIONS: MaintenanceReason[] = ['Reporting Portal Upgrade', 'DB Migration', 'OS Patching']
-const APPROVER_OPTIONS: Approver[] = ['john', 'sayem', 'naveed']
-const PERFORM_BY_OPTIONS: PerformBy[] = ['hafiz', 'shahid', 'aiman']
-const STATUS_OPTIONS: Status[] = ['pending', 'on-hold', 'failed', 'completed']
+const CLIENT_OPTIONS: ClientName[] = [
+  'Asmara', 'At Sunrise', 'Best Home', 'Busy Bees SG', 'CBRE', 'Certis', 'Challenger',
+  'Chan Brothers', 'City State', 'DHL Malaysia', 'Dr Anywhere', 'Envac', 'Eversafe',
+  'Getgo', 'hisense', 'HSC Cancer', 'Interwell', 'iSetan', 'KFCPH', 'LHN Parking',
+  'Nippon Paint', 'NTUC Fairprice', 'Nuffield Dental', 'Origin', 'Other Client',
+  'pegasus', 'PLE', 'PMG Asia', 'Scania', 'Skool4Kidz', 'SMG Group/LSI', 'SMG IP',
+  'SMRT', 'Sysmex Malaysia', 'Touch Community', 'Vertex', 'Vistek', 'Webull',
+  'Wong Fong', 'Woosa'
+]
+const REASON_OPTIONS: MaintenanceReason[] = ['Asterisk Upgrade', 'DB Migration', 'Key Rotation', 'OS Patching', 'Other Reasons', 'Portal Upgrade', 'SSL Renewal', 'WAF Implementation']
+const APPROVER_OPTIONS: Approver[] = ['john', 'naveed', 'sayem']
+const PERFORMED_BY_OPTIONS: PerformedBy[] = ['aiman', 'hafiz', 'shahid']
+const STATUS_OPTIONS: Status[] = ['completed', 'failed', 'on-hold', 'pending']
 
-export default function MaintenanceForm({ record, onSuccess, onCancel }: MaintenanceFormProps) {
+export default function MaintenanceForm({ record, isCopy, onSuccess, onCancel }: MaintenanceFormProps) {
   const [formData, setFormData] = useState<MaintenanceRecordInput>({
     server_name: 'sip11',
-    client_name: 'certis',
+    client_name: 'Certis',
     maintenance_date: '',
-    maintenance_reason: 'Reporting Portal Upgrade',
+    start_time: '',
+    end_time: '',
+    maintenance_reason: 'Portal Upgrade',
     approver: 'john',
-    perform_by: 'hafiz',
+    performed_by: 'aiman',
     status: 'pending',
+    remark: '',
   })
   const [submitting, setSubmitting] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -52,11 +65,20 @@ export default function MaintenanceForm({ record, onSuccess, onCancel }: Mainten
         server_name: record.server_name,
         client_name: record.client_name,
         maintenance_date: record.maintenance_date,
+        start_time: record.start_time?.substring(0, 5) || '', // Handle HH:MM:SS format from Postgres
+        end_time: record.end_time?.substring(0, 5) || '',
         maintenance_reason: record.maintenance_reason,
         approver: record.approver,
-        perform_by: record.perform_by,
+        performed_by: record.performed_by || (record as any).perform_by || 'hafiz',
         status: record.status,
+        remark: isCopy ? '' : (record.remark || ''),
       })
+
+      if (isCopy) {
+        setUploadedFiles([])
+        return
+      }
+
       // Handle both array and legacy single string format, and JSONB string from Supabase
       let proofFiles: string[] = []
       if (Array.isArray(record.proof_of_maintenance)) {
@@ -155,10 +177,17 @@ export default function MaintenanceForm({ record, onSuccess, onCancel }: Mainten
     try {
       const dataToSubmit = {
         ...formData,
+        performed_by: formData.performed_by || 'aiman', // Fallback to avoid not-null constraint error
         proof_of_maintenance: uploadedFiles.length > 0 ? uploadedFiles : null,
       }
 
-      if (record) {
+      if (!dataToSubmit.performed_by) {
+        alert('Please select at least one person in "Performed By"')
+        setSubmitting(false)
+        return
+      }
+
+      if (record && !isCopy) {
         // Update existing record
         const { error } = await supabase
           .from('maintenance_records')
@@ -222,9 +251,9 @@ export default function MaintenanceForm({ record, onSuccess, onCancel }: Mainten
   }
 
   return (
-    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+    <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-inner">
       <h2 className="text-xl font-semibold mb-4">
-        {record ? 'Edit Record' : 'Add New Record'}
+        {isCopy ? 'Copy Nautilus Record' : record ? 'Edit Nautilus Record' : 'Add New Nautilus Record'}
       </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -246,7 +275,7 @@ export default function MaintenanceForm({ record, onSuccess, onCancel }: Mainten
                   setServerSearch('')
                   setShowServerDropdown(true)
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#dc3545] focus:border-[#dc3545] outline-none transition-all"
               />
               {showServerDropdown && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
@@ -287,7 +316,7 @@ export default function MaintenanceForm({ record, onSuccess, onCancel }: Mainten
                   setClientSearch('')
                   setShowClientDropdown(true)
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#dc3545] focus:border-[#dc3545] outline-none transition-all"
               />
               {showClientDropdown && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
@@ -321,13 +350,42 @@ export default function MaintenanceForm({ record, onSuccess, onCancel }: Mainten
             required
             value={formData.maintenance_date}
             onChange={handleDateChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#dc3545] focus:border-[#dc3545] transition-all"
           />
           {formData.maintenance_date && (
             <p className="mt-1 text-sm text-gray-500">
               Selected: {formatDateForDisplay(formData.maintenance_date)}
             </p>
           )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="start_time" className="block text-sm font-medium text-gray-700 mb-1">
+              Start Time <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="time"
+              id="start_time"
+              required
+              value={formData.start_time}
+              onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#dc3545] focus:border-[#dc3545] transition-all"
+            />
+          </div>
+          <div>
+            <label htmlFor="end_time" className="block text-sm font-medium text-gray-700 mb-1">
+              End Time <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="time"
+              id="end_time"
+              required
+              value={formData.end_time}
+              onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#dc3545] focus:border-[#dc3545] transition-all"
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -340,7 +398,7 @@ export default function MaintenanceForm({ record, onSuccess, onCancel }: Mainten
               required
               value={formData.maintenance_reason}
               onChange={(e) => setFormData({ ...formData, maintenance_reason: e.target.value as MaintenanceReason })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#dc3545] focus:border-[#dc3545] transition-all"
             >
               {REASON_OPTIONS.map((reason) => (
                 <option key={reason} value={reason}>
@@ -359,7 +417,7 @@ export default function MaintenanceForm({ record, onSuccess, onCancel }: Mainten
               required
               value={formData.approver}
               onChange={(e) => setFormData({ ...formData, approver: e.target.value as Approver })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#dc3545] focus:border-[#dc3545] transition-all"
             >
               {APPROVER_OPTIONS.map((approver) => (
                 <option key={approver} value={approver}>
@@ -370,22 +428,36 @@ export default function MaintenanceForm({ record, onSuccess, onCancel }: Mainten
           </div>
 
           <div>
-            <label htmlFor="perform_by" className="block text-sm font-medium text-gray-700 mb-1">
-              Perform By <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Performed By <span className="text-red-500">*</span>
             </label>
-            <select
-              id="perform_by"
-              required
-              value={formData.perform_by}
-              onChange={(e) => setFormData({ ...formData, perform_by: e.target.value as PerformBy })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              {PERFORM_BY_OPTIONS.map((person) => (
-                <option key={person} value={person}>
-                  {person.charAt(0).toUpperCase() + person.slice(1)}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-wrap gap-3 p-2 border border-gray-300 rounded-lg bg-white">
+              {PERFORMED_BY_OPTIONS.map((person) => {
+                const selected = formData.performed_by.split(', ').includes(person)
+                return (
+                  <label key={person} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      onChange={(e) => {
+                        const current = formData.performed_by ? formData.performed_by.split(', ') : []
+                        const updated = e.target.checked
+                          ? [...current, person]
+                          : current.filter(p => p !== person)
+                        setFormData({ ...formData, performed_by: updated.join(', ') })
+                      }}
+                      className="rounded border-gray-300 text-[#dc3545] focus:ring-[#dc3545] h-4 w-4"
+                    />
+                    <span className="text-sm text-gray-700">
+                      {person.charAt(0).toUpperCase() + person.slice(1)}
+                    </span>
+                  </label>
+                )
+              })}
+            </div>
+            {formData.performed_by === '' && (
+              <p className="mt-1 text-xs text-red-500">Please select at least one person</p>
+            )}
           </div>
 
           <div>
@@ -464,11 +536,29 @@ export default function MaintenanceForm({ record, onSuccess, onCancel }: Mainten
           )}
         </div>
 
+        <div>
+          <label htmlFor="remark" className="block text-sm font-medium text-gray-700 mb-1">
+            Remark (Max 1000 characters)
+          </label>
+          <textarea
+            id="remark"
+            rows={3}
+            maxLength={1000}
+            value={formData.remark}
+            onChange={(e) => setFormData({ ...formData, remark: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#dc3545] focus:border-[#dc3545] transition-all"
+            placeholder="Add any additional notes here..."
+          />
+          <p className="mt-1 text-xs text-gray-500 text-right">
+            {formData.remark?.length || 0} / 1000
+          </p>
+        </div>
+
         <div className="flex gap-3 pt-2">
           <button
             type="submit"
             disabled={submitting || uploading}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="premium-bg text-white px-4 py-2 rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? 'Saving...' : record ? 'Update' : 'Create'}
           </button>
