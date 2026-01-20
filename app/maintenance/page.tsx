@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { MaintenanceRecord, ServerName, ClientName } from '@/types/maintenance'
+import { MaintenanceRecord, ServerName, ClientName, Status } from '@/types/maintenance'
 import MaintenanceForm from '@/components/MaintenanceForm'
 import MaintenanceTable from '@/components/MaintenanceTable'
 import SearchAndFilter from '@/components/SearchAndFilter'
@@ -15,6 +15,7 @@ export default function MaintenancePage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [serverFilter, setServerFilter] = useState<ServerName | 'all'>('all')
   const [clientFilter, setClientFilter] = useState<ClientName | 'all'>('all')
+  const [statusFilter, setStatusFilter] = useState<Status | 'all'>('all')
   const [isCopying, setIsCopying] = useState(false)
 
   useEffect(() => {
@@ -112,7 +113,8 @@ export default function MaintenancePage() {
       record.maintenance_reason.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesServer = serverFilter === 'all' || record.server_name === serverFilter
     const matchesClient = clientFilter === 'all' || record.client_name === clientFilter
-    return matchesSearch && matchesServer && matchesClient
+    const matchesStatus = statusFilter === 'all' || record.status === statusFilter
+    return matchesSearch && matchesServer && matchesClient && matchesStatus
   })
 
   return (
@@ -157,6 +159,8 @@ export default function MaintenancePage() {
               onServerFilterChange={setServerFilter}
               clientFilter={clientFilter}
               onClientFilterChange={setClientFilter}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
             />
 
             {showForm && (

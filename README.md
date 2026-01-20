@@ -1,24 +1,25 @@
-📁 Core Folders
-app/: This is the heart of your website. In Next.js (the framework we're using), the folders inside app define your web pages.
-page.tsx is your homepage.
-maintenance/page.tsx is the "Maintenance Records" page you've been working on.
-components/: Think of these as reusable LEGO blocks. Instead of writing the same code for a table or a form over and over, we build a "component" once here and use it wherever we need it.
-lib/: Short for "library." This folder contains setup code for external tools. In your case, it has the connection to Supabase (your database).
-supabase/: This contains the "blueprints" for your database. The 
-.sql
- files here are instructions for Supabase to create your tables and rules.
-types/: This defines the shape of your data. It tells the code, "A Maintenance Record must have a date, a server name, and a reason." This helps prevent errors.
-node_modules/: (You can ignore this) This folder is huge and contains all the pre-built code your app needs to run. You never need to touch this yourself.
-📄 Important Files
-package.json
-: This is the recipe card for your project. It lists all the ingredients (tools and libraries) needed to make the app work.
-.env.local
-: This is a safe for your secrets. It contains your private Supabase keys that connect the app to your database.
-README.md
-: The instruction manual for humans. It explains what the project is and how to get it running.
-tailwind.config.ts
-: The "style manual." It controls the colors, fonts, and layout options for the app's design.
-tsconfig.json
-: Rules for how your code should be checked for mistakes.
+Here is a summary of the technology stack and tools we've used for the Maintenance Record App:
 
+🛠️ Core Development
+AI Assistant: Antigravity (Advanced Agentic AI)
+IDE: Cursor (AI-integrated code editor)
+Framework: Next.js 14 (App Router)
+Language: TypeScript (for type-safe code)
+Styling: Tailwind CSS (for modern UI & Glassmorphism)
+Version Control: Git
+🗄️ Backend & Infrastructure
+Database: Supabase (PostgreSQL)
+Storage: Supabase Buckets (for image proofs)
+Authentication: Supabase Auth (ready for implementation)
+Environment: .env.local (for secure API keys)
+🌐 Deployment (AWS Stack)
+Hosting: AWS EC2 (Ubuntu 22.04 LTS)
+DNS & Domain: AWS Route 53 (nautilus.com)
+Web Server: Nginx (used as a Reverse Proxy)
+Process Manager: PM2 (keeps the app running 24/7)
+Security/SSL: Certbot & Let's Encrypt (for HTTPS)
+🎨 Design Highlights
+Brand Color: #dc3545 (Nautilus Red)
+UI Architecture: Component-based (LEGO-style reusable blocks)
+Responsiveness: Mobile-first design (fully functional on phones/tablets)
 

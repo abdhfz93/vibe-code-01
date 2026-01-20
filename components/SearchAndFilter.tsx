@@ -1,6 +1,6 @@
 'use client'
 
-import { ServerName, ClientName } from '@/types/maintenance'
+import { ServerName, ClientName, Status } from '@/types/maintenance'
 
 interface SearchAndFilterProps {
   searchTerm: string
@@ -9,6 +9,8 @@ interface SearchAndFilterProps {
   onServerFilterChange: (server: ServerName | 'all') => void
   clientFilter: ClientName | 'all'
   onClientFilterChange: (client: ClientName | 'all') => void
+  statusFilter: Status | 'all'
+  onStatusFilterChange: (status: Status | 'all') => void
 }
 
 const SERVER_OPTIONS: ServerName[] = [
@@ -30,6 +32,7 @@ const CLIENT_OPTIONS: ClientName[] = [
   'SMRT', 'Sysmex Malaysia', 'Touch Community', 'Vertex', 'Vistek', 'Webull',
   'Wong Fong', 'Woosa'
 ]
+const STATUS_OPTIONS: Status[] = ['pending', 'on-hold', 'failed', 'completed']
 
 export default function SearchAndFilter({
   searchTerm,
@@ -38,6 +41,8 @@ export default function SearchAndFilter({
   onServerFilterChange,
   clientFilter,
   onClientFilterChange,
+  statusFilter,
+  onStatusFilterChange,
 }: SearchAndFilterProps) {
   return (
     <div className="mb-6 flex gap-4 flex-wrap">
@@ -86,6 +91,24 @@ export default function SearchAndFilter({
           {CLIENT_OPTIONS.map((client) => (
             <option key={client} value={client}>
               {client}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="min-w-[150px]">
+        <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700 mb-1">
+          Filter by Status
+        </label>
+        <select
+          id="status-filter"
+          value={statusFilter}
+          onChange={(e) => onStatusFilterChange(e.target.value as Status | 'all')}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#dc3545] focus:border-[#dc3545] outline-none transition-all capitalize"
+        >
+          <option value="all">All Statuses</option>
+          {STATUS_OPTIONS.map((status) => (
+            <option key={status} value={status}>
+              {status}
             </option>
           ))}
         </select>
