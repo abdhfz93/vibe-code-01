@@ -110,7 +110,9 @@ export default function MaintenancePage() {
     const matchesSearch =
       record.server_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       record.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.maintenance_reason.toLowerCase().includes(searchTerm.toLowerCase())
+      record.maintenance_reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.performed_by.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesServer = serverFilter === 'all' || record.server_name === serverFilter
     const matchesClient = clientFilter === 'all' || record.client_name === clientFilter
     const matchesStatus = statusFilter === 'all' || record.status === statusFilter
