@@ -13,6 +13,11 @@ export default function MasterlistPage() {
     const [editingRecord, setEditingRecord] = useState<MasterlistRecord | null>(null)
     const [searchTerm, setSearchTerm] = useState('')
 
+    // Filters
+    const [providerFilter, setProviderFilter] = useState('all')
+    const [categoryFilter, setCategoryFilter] = useState('all')
+    const [endpointFilter, setEndpointFilter] = useState('all')
+
     useEffect(() => {
         fetchRecords()
     }, [])
@@ -70,18 +75,33 @@ export default function MasterlistPage() {
         fetchRecords()
     }
 
-    const filteredRecords = records.filter(record =>
-        record.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (record.server_url && record.server_url.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (record.sip_id && record.sip_id.toLowerCase().includes(searchTerm.toLowerCase()))
-    )
+    // Get unique values for filters
+    const providers = Array.from(new Set(records.map(r => r.provider).filter(Boolean)))
+    const categories = Array.from(new Set(records.map(r => r.category).filter(Boolean)))
+    const endpoints = Array.from(new Set(records.map(r => r.endpoint_classification).filter(Boolean)))
+
+    const filteredRecords = records.filter(record => {
+        const matchesSearch =
+            record.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (record.sip_id && record.sip_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (record.ip_address && record.ip_address.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (record.server_url && record.server_url.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (record.custom_features && record.custom_features.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (record.subscription_plan && record.subscription_plan.toLowerCase().includes(searchTerm.toLowerCase()))
+
+        const matchesProvider = providerFilter === 'all' || record.provider === providerFilter
+        const matchesCategory = categoryFilter === 'all' || record.category === categoryFilter
+        const matchesEndpoint = endpointFilter === 'all' || (record.endpoint_classification && record.endpoint_classification.includes(endpointFilter))
+
+        return matchesSearch && matchesProvider && matchesCategory && matchesEndpoint
+    })
 
     return (
-        <div className="min-h-screen bg-[#f8fafc] pb-20">
-            {/* Header Section */}
+        <div className="min-h-screen bg-[#f8fafc] pb-24">
+            {/* Premium Sticky Header */}
             <div className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-30">
                 <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-5">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
                             <a
                                 href="/"
@@ -97,23 +117,53 @@ export default function MasterlistPage() {
                             </h1>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                            <div className="relative group">
+                        <div className="flex flex-wrap items-center gap-3">
+                            <div className="relative group flex-1 min-w-[300px]">
                                 <input
                                     type="text"
-                                    placeholder="Search by name, URL or SIP..."
+                                    placeholder="Search by Name, SIP# or IP..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full md:w-64 pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#dc3545] focus:bg-white outline-none transition-all text-sm"
+                                    className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#dc3545] focus:bg-white outline-none transition-all text-sm"
                                 />
-                                <svg className="w-4 h-4 text-gray-400 absolute left-3.5 top-3 transition-colors group-focus-within:text-[#dc3545]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 text-gray-400 absolute left-3.5 top-2.5 transition-colors group-focus-within:text-[#dc3545]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
 
+                            <div className="flex gap-2">
+                                <select
+                                    value={providerFilter}
+                                    onChange={(e) => setProviderFilter(e.target.value)}
+                                    className="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#dc3545] outline-none transition-all text-xs font-bold text-gray-700"
+                                >
+                                    <option value="all">All Providers</option>
+                                    {providers.map(p => <option key={p} value={p!}>{p}</option>)}
+                                </select>
+
+                                <select
+                                    value={categoryFilter}
+                                    onChange={(e) => setCategoryFilter(e.target.value)}
+                                    className="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#dc3545] outline-none transition-all text-xs font-bold text-gray-700"
+                                >
+                                    <option value="all">All Categories</option>
+                                    {categories.map(c => <option key={c} value={c!}>{c}</option>)}
+                                </select>
+
+                                <select
+                                    value={endpointFilter}
+                                    onChange={(e) => setEndpointFilter(e.target.value)}
+                                    className="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#dc3545] outline-none transition-all text-xs font-bold text-gray-700"
+                                >
+                                    <option value="all">All Endpoints</option>
+                                    {endpoints.map(e => <option key={e} value={e!}>{e}</option>)}
+                                </select>
+                            </div>
+
                             <button
                                 onClick={handleAdd}
-                                className="bg-gradient-to-r from-[#dc3545] to-[#a71d2a] text-white px-6 py-2.5 rounded-xl font-bold shadow-lg shadow-[#dc3545]/20 hover:scale-[1.02] active:scale-95 transition-all text-sm whitespace-nowrap"
+                                disabled={showForm}
+                                className="bg-gradient-to-r from-[#dc3545] to-[#a71d2a] text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-[#dc3545]/20 hover:scale-[1.02] active:scale-95 transition-all text-sm whitespace-nowrap disabled:grayscale disabled:opacity-50"
                             >
                                 + Add Customer
                             </button>
@@ -122,8 +172,9 @@ export default function MasterlistPage() {
                 </div>
             </div>
 
-            <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-                <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-center gap-3">
+            <main className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+                {/* Construction Banner */}
+                <div className="mb-6 bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-center gap-3">
                     <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -134,9 +185,7 @@ export default function MasterlistPage() {
                         <p className="text-xs text-amber-700">The Customer Masterlist is currently being populated and refined. Some functions may be limited.</p>
                     </div>
                 </div>
-            </div>
 
-            <main className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 mt-8">
                 {showForm && (
                     <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-300">
                         <MasterlistForm
@@ -154,7 +203,7 @@ export default function MasterlistPage() {
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-20">
                             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#dc3545] mb-4"></div>
-                            <p className="text-gray-400 font-bold text-xs uppercase tracking-widest">Refreshing...</p>
+                            <p className="text-gray-400 font-bold text-xs uppercase tracking-widest">Accessing Database...</p>
                         </div>
                     ) : (
                         <MasterlistTable
@@ -166,8 +215,8 @@ export default function MasterlistPage() {
                 </div>
             </main>
 
-            <footer className="mt-20 text-center">
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mb-2">
+            <footer className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-100 py-4 text-center z-40">
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mb-1">
                     &copy; {new Date().getFullYear()} Nautilus SIP Pte Ltd.
                 </p>
                 <div className="flex justify-center gap-4">

@@ -10,12 +10,12 @@ interface MasterlistTableProps {
 
 export default function MasterlistTable({ records, onEdit, onDelete }: MasterlistTableProps) {
     const getCategoryColor = (category: string | null) => {
-        if (!category) return 'bg-gray-100 text-gray-800'
+        if (!category) return 'bg-slate-100 text-slate-800'
         const cat = category.toLowerCase()
         if (cat.includes('high')) return 'bg-red-100 text-red-800'
         if (cat.includes('grow')) return 'bg-blue-100 text-blue-800'
-        if (cat.includes('medium')) return 'bg-yellow-100 text-yellow-800'
-        return 'bg-gray-100 text-gray-800'
+        if (cat.includes('medium')) return 'bg-amber-100 text-amber-800'
+        return 'bg-slate-100 text-slate-800'
     }
 
     if (records.length === 0) {
@@ -31,70 +31,92 @@ export default function MasterlistTable({ records, onEdit, onDelete }: Masterlis
             <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                     <tr>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                            SIP / Company
+                        <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            SIP # / Client Name
                         </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                            Connectivity
+                        <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            Connectivity (URL/IP)
                         </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                            Plan / Provider
+                        <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            Product & Specs
                         </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                            Specs
+                        <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            Configuration & Features
                         </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                            Endpoints
+                        <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            Contact & Address
                         </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                        <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                             Category
                         </th>
-                        <th className="px-4 py-3 text-right text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                        <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                             Actions
                         </th>
                     </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
                     {records.map((record) => (
-                        <tr key={record.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-4 py-4">
-                                <div className="text-xs font-bold text-[#dc3545]"># {record.sip_id || '-'}</div>
-                                <div className="text-sm font-bold text-gray-900 line-clamp-1">{record.company_name}</div>
-                            </td>
-                            <td className="px-4 py-4">
-                                <div className="text-xs text-blue-600 font-semibold truncate max-w-[150px]" title={record.server_url || ''}>
-                                    {record.server_url || '-'}
+                        <tr key={record.id} className="hover:bg-slate-50/50 transition-colors group">
+                            <td className="px-4 py-4 whitespace-nowrap">
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">#{record.sip_id || 'N/A'}</span>
+                                    <span className="text-sm font-semibold text-slate-900">{record.company_name}</span>
+                                    <span className="text-[11px] font-medium text-slate-500">{record.provider || 'N/A'}</span>
                                 </div>
-                                <div className="text-[10px] text-gray-400 font-mono">{record.ip_address || '-'}</div>
                             </td>
                             <td className="px-4 py-4">
-                                <div className="text-xs font-semibold text-gray-800">{record.subscription_plan || '-'}</div>
-                                <div className="text-[10px] text-gray-500 uppercase">{record.provider || '-'}</div>
-                            </td>
-                            <td className="px-4 py-4">
-                                <div className="flex gap-2">
-                                    <div className="text-[10px] bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">
-                                        <span className="text-gray-400">T/L:</span> <span className="font-bold text-gray-700">{record.trunks_lines}</span>
-                                    </div>
-                                    <div className="text-[10px] bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">
-                                        <span className="text-gray-400">EXT:</span> <span className="font-bold text-gray-700">{record.extensions}</span>
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="text-sm font-semibold text-blue-600 truncate max-w-[200px]" title={record.server_url || ''}>
+                                        {record.server_url || 'N/A'}
+                                    </span>
+                                    <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">IP:</span>
+                                        <span className="font-mono">{record.ip_address || 'N/A'}</span>
                                     </div>
                                 </div>
                             </td>
                             <td className="px-4 py-4">
-                                <div className="text-[10px] text-gray-600 truncate max-w-[120px]">{record.endpoint_class_1 || '-'}</div>
-                                <div className="text-[10px] text-gray-400 truncate max-w-[120px]">{record.endpoint_class_2 || '-'}</div>
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="text-sm font-semibold text-slate-900">{record.subscription_plan || 'N/A'}</span>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">T/L:</span>
+                                            <span>{record.trunks_lines}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">EXT:</span>
+                                            <span>{record.extensions}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td className="px-4 py-4 max-w-[250px]">
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="text-[11px] font-medium text-slate-900 line-clamp-1" title={record.custom_features || ''}>
+                                        {record.custom_features || 'N/A'}
+                                    </span>
+                                    <span className="text-[10px] text-slate-500 italic truncate" title={record.endpoint_classification || ''}>
+                                        {record.endpoint_classification || 'N/A'}
+                                    </span>
+                                </div>
+                            </td>
+                            <td className="px-4 py-4 max-w-[200px]">
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="text-[11px] font-bold text-slate-700">{record.client_contact || 'No Contact'}</span>
+                                    <span className="text-[10px] text-slate-400 truncate tracking-tight">{record.client_address || 'No Address'}</span>
+                                    <span className="text-[10px] text-slate-500 font-medium">Schedule: {record.office_hours || 'N/A'}</span>
+                                </div>
                             </td>
                             <td className="px-4 py-4">
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${getCategoryColor(record.category)}`}>
+                                <span className={`px-3 py-1 inline-flex text-[10px] leading-4 font-bold rounded-full shadow-sm border uppercase tracking-wider ${getCategoryColor(record.category)}`}>
                                     {record.category || 'Standard'}
                                 </span>
                             </td>
                             <td className="px-4 py-4 text-right">
-                                <div className="flex justify-end gap-2">
+                                <div className="flex justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
                                     <button
                                         onClick={() => onEdit(record)}
-                                        className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                                         title="Edit Customer"
                                     >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,7 +125,7 @@ export default function MasterlistTable({ records, onEdit, onDelete }: Masterlis
                                     </button>
                                     <button
                                         onClick={() => onDelete(record.id)}
-                                        className="p-1 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                        className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-all"
                                         title="Delete Customer"
                                     >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

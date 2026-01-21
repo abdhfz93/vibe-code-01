@@ -7,13 +7,14 @@ export interface MasterlistRecord {
     ip_address: string | null
     server_url: string | null
     subscription_plan: string | null
-    office_close: string | null
+    office_hours: string | null
     trunks_lines: number
     extensions: number
     category: string | null
-    endpoint_class_1: string | null
-    endpoint_class_2: string | null
+    endpoint_classification: string | null
     remarks: string | null
+    client_contact: string | null
+    client_address: string | null
     created_at: string
     updated_at: string
 }
@@ -26,11 +27,12 @@ export interface MasterlistInput {
     ip_address?: string
     server_url?: string
     subscription_plan?: string
-    office_close?: string
+    office_hours?: string
     trunks_lines?: number
     extensions?: number
     category?: string
-    endpoint_class_1?: string
-    endpoint_class_2?: string
+    endpoint_classification?: string
     remarks?: string
+    client_contact?: string
+    client_address?: string
 }

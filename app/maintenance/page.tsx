@@ -131,7 +131,7 @@ export default function MaintenancePage() {
   }, [searchTerm, statusFilter])
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pb-20">
+    <div className="min-h-screen bg-[#f8fafc] pb-24">
       {/* Premium Sticky Header */}
       <div className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-30">
         <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-5">
@@ -248,8 +248,8 @@ export default function MaintenancePage() {
                         key={pageNum}
                         onClick={() => setCurrentPage(pageNum)}
                         className={`w-10 h-10 rounded-xl text-sm font-bold transition-all border ${currentPage === pageNum
-                            ? 'bg-[#dc3545] text-white border-[#dc3545] shadow-lg shadow-[#dc3545]/20'
-                            : 'bg-white text-gray-600 border-gray-100 hover:border-[#dc3545] hover:text-[#dc3545]'
+                          ? 'bg-[#dc3545] text-white border-[#dc3545] shadow-lg shadow-[#dc3545]/20'
+                          : 'bg-white text-gray-600 border-gray-100 hover:border-[#dc3545] hover:text-[#dc3545]'
                           }`}
                       >
                         {pageNum}
@@ -276,8 +276,8 @@ export default function MaintenancePage() {
         )}
       </main>
 
-      <footer className="mt-20 text-center">
-        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mb-2">
+      <footer className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-100 py-4 text-center z-40">
+        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mb-1">
           &copy; {new Date().getFullYear()} Nautilus SIP Pte Ltd.
         </p>
         <div className="flex justify-center gap-4">
