@@ -82,7 +82,16 @@ export default function MasterlistPage() {
             <div className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-30">
                 <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-5">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
+                        <div className="flex items-center gap-4">
+                            <a
+                                href="/"
+                                className="p-2 bg-slate-50 text-slate-400 hover:text-[#dc3545] hover:bg-[#dc3545]/10 rounded-xl transition-all group"
+                                title="Back to Home"
+                            >
+                                <svg className="w-5 h-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                </svg>
+                            </a>
                             <h1 className="text-2xl font-black text-gray-900 tracking-tight">
                                 <span className="text-[#dc3545]">Nautilus</span> Customer Masterlist
                             </h1>
@@ -109,6 +118,20 @@ export default function MasterlistPage() {
                                 + Add Customer
                             </button>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+                <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-center gap-3">
+                    <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 className="text-sm font-bold text-amber-900">Feature Under Construction</h4>
+                        <p className="text-xs text-amber-700">The Customer Masterlist is currently being populated and refined. Some functions may be limited.</p>
                     </div>
                 </div>
             </div>

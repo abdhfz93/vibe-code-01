@@ -144,7 +144,7 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete }: 
               </td>
               <td className="px-4 py-4">
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Approve by</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Approved by</span>
                   <span className="text-sm font-semibold text-slate-900 capitalize leading-none">{record.approver}</span>
                   <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500 mt-1">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Performed by:</span>
