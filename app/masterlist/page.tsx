@@ -63,12 +63,14 @@ export default function MasterlistPage() {
     const handleAdd = () => {
         setEditingRecord(null)
         setShowForm(true)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
     const handleEdit = (record: MasterlistRecord) => {
         setViewingRecord(null)
         setEditingRecord(record)
         setShowForm(true)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
     const handleView = (record: MasterlistRecord) => {

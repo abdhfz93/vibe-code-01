@@ -387,7 +387,7 @@ export default function MasterlistForm({ record, onSuccess, onCancel }: Masterli
 
                     <div className="md:col-span-4">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Endpoint Classification (Multi-select)
+                            Endpoint Classification
                         </label>
                         <div className="flex flex-wrap gap-2 mt-1">
                             {ENDPOINT_CLASSIFICATIONS.map(endpoint => (
@@ -411,7 +411,7 @@ export default function MasterlistForm({ record, onSuccess, onCancel }: Masterli
 
                     <div className="md:col-span-4">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Custom Features (Multi-select)
+                            Custom Features
                         </label>
                         <div className="flex flex-wrap gap-2 mt-1">
                             {CUSTOM_FEATURES_OPTIONS.map(feature => (

@@ -17,6 +17,7 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
   const [selectedChecklistRecord, setSelectedChecklistRecord] = useState<MaintenanceRecord | null>(null)
   const [selectedSummaryRecord, setSelectedSummaryRecord] = useState<MaintenanceRecord | null>(null)
   const [localChecklists, setLocalChecklists] = useState<Record<string, { label: string, status: 'pass' | 'fail' | 'not-tested' }[]>>({})
+  const [tempChecklist, setTempChecklist] = useState<ChecklistItem[] | null>(null)
 
   const defaultChecklistItems = [
     "Able to make outbound calls",
@@ -27,27 +28,38 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
     "Able to transcribe the calls"
   ]
 
-  const handleStatusChange = async (recordId: string, itemLabel: string, newStatus: 'pass' | 'fail' | 'not-tested') => {
-    const record = records.find(r => r.id === recordId)
-    const existingChecklist = localChecklists[recordId] || record?.checklist || []
+  const handleStatusChange = (itemLabel: string, newStatus: 'pass' | 'fail' | 'not-tested') => {
+    if (!tempChecklist) return
 
-    // Always use defaultChecklistItems as the base to ensure all 6 items are present
     const updatedChecklist = defaultChecklistItems.map(label => {
-      const existingItem = existingChecklist.find(i => i.label === label)
+      const existingItem = tempChecklist.find(i => i.label === label)
       if (label === itemLabel) {
         return { label, status: newStatus }
       }
       return existingItem || { label, status: 'not-tested' }
     }) as ChecklistItem[]
 
-    setLocalChecklists(prev => ({ ...prev, [recordId]: updatedChecklist }))
+    setTempChecklist(updatedChecklist)
+  }
+
+  const handleSaveChecklist = async () => {
+    if (!selectedChecklistRecord || !tempChecklist) return
+
+    setLocalChecklists(prev => ({ ...prev, [selectedChecklistRecord.id]: tempChecklist }))
 
     try {
-      await onUpdateChecklist(recordId, updatedChecklist)
+      await onUpdateChecklist(selectedChecklistRecord.id, tempChecklist)
+      setSelectedChecklistRecord(null)
+      setTempChecklist(null)
     } catch (error) {
       console.error('Failed to update checklist:', error)
       alert('Failed to save checklist state. Please try again.')
     }
+  }
+
+  const closeChecklist = () => {
+    setSelectedChecklistRecord(null)
+    setTempChecklist(null)
   }
 
   // Handle ESC key to close modals
@@ -55,7 +67,7 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setSelectedRemark(null)
-        setSelectedChecklistRecord(null)
+        closeChecklist()
         setSelectedSummaryRecord(null)
       }
     }
@@ -228,7 +240,16 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
 
                     const checklistButton = (
                       <button
-                        onClick={() => setSelectedChecklistRecord(record)}
+                        onClick={() => {
+                          setSelectedChecklistRecord(record)
+                          const initialChecklist = localChecklists[record.id] || record.checklist || []
+                          // Ensure all default items are present in temp state
+                          const fullChecklist = defaultChecklistItems.map(label => {
+                            const existing = initialChecklist.find(i => i.label === label)
+                            return existing || { label, status: 'not-tested' }
+                          }) as ChecklistItem[]
+                          setTempChecklist(fullChecklist)
+                        }}
                         className="text-[10px] font-bold text-indigo-600 bg-indigo-50/50 hover:bg-indigo-100/80 px-2 py-0.5 rounded transition-colors uppercase tracking-tight flex items-center gap-1 w-fit mt-1"
                       >
                         Checklist
@@ -317,7 +338,7 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
             <div
               className="fixed inset-0 transition-opacity"
               aria-hidden="true"
-              onClick={() => setSelectedChecklistRecord(null)}
+              onClick={closeChecklist}
             >
               <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
             </div>
@@ -347,9 +368,7 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
 
                 <div className="space-y-3">
                   {defaultChecklistItems.map((item, index) => {
-                    const record = records.find(r => r.id === selectedChecklistRecord.id)
-                    const recordChecklist = localChecklists[selectedChecklistRecord.id] || record?.checklist;
-                    const recordItem = recordChecklist?.find(i => i.label === item);
+                    const recordItem = tempChecklist?.find(i => i.label === item);
                     const status = recordItem?.status || 'not-tested';
 
                     return (
@@ -359,7 +378,7 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
                           {(['pass', 'fail', 'not-tested'] as const).map((s) => (
                             <button
                               key={s}
-                              onClick={() => handleStatusChange(selectedChecklistRecord.id, item, s)}
+                              onClick={() => handleStatusChange(item, s)}
                               className={`px-2 py-1 text-[10px] font-bold rounded-md uppercase tracking-tighter transition-all ${status === s
                                 ? s === 'pass'
                                   ? 'bg-green-500 text-white shadow-sm'
@@ -382,7 +401,7 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
                 <button
                   type="button"
                   className="px-4 py-2 bg-[#dc3545] text-white text-sm font-bold rounded-xl hover:bg-[#bb2d3b] transition-colors shadow-md shadow-red-100"
-                  onClick={() => setSelectedChecklistRecord(null)}
+                  onClick={handleSaveChecklist}
                 >
                   Done
                 </button>
@@ -425,15 +444,6 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
                     {selectedRemark || 'No remark added.'}
                   </p>
                 </div>
-              </div>
-              <div className="bg-slate-50 px-6 py-4 flex justify-end">
-                <button
-                  type="button"
-                  className="px-6 py-2 bg-[#dc3545] text-white text-sm font-bold rounded-xl hover:bg-[#bb2d3b] transition-colors shadow-md shadow-red-100"
-                  onClick={() => setSelectedRemark(null)}
-                >
-                  Close
-                </button>
               </div>
             </div>
           </div>

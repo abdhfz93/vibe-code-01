@@ -42,18 +42,21 @@ export default function MaintenancePage() {
     setEditingRecord(null)
     setIsCopying(false)
     setShowForm(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const handleEdit = (record: MaintenanceRecord) => {
     setEditingRecord(record)
     setIsCopying(false)
     setShowForm(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const handleCopy = (record: MaintenanceRecord) => {
     setEditingRecord(record)
     setIsCopying(true)
     setShowForm(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const handleDelete = async (id: string) => {
