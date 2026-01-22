@@ -1,16 +1,36 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { MasterlistRecord } from '@/types/masterlist'
 import MasterlistTable from '@/components/MasterlistTable'
 import MasterlistForm from '@/components/MasterlistForm'
+import MasterlistView from '@/components/MasterlistView'
+
+// Defined values for fixed filters (Must match MasterlistForm constants)
+const PROVIDERS = ['MyRepublic', 'Singtel']
+const CATEGORIES = ['Grow Profile', 'High Profile', 'Medium Profile']
+const ENDPOINT_CLASSIFICATIONS = [
+    'ATA (Gateway)',
+    'Call Forwarding',
+    'Door phone',
+    'GS Wave (Mobile App)',
+    'IP phone (Hardphone)',
+    'Nautilus Connect (Mobile App)',
+    'Nautilus Desk (Softphone)',
+    'Nautilus Go (Mobile App)',
+    'SIP Trunk',
+    'UCM - Grandstream PBX',
+    'Webphone',
+    'Zoiper (Softphone)'
+]
 
 export default function MasterlistPage() {
     const [records, setRecords] = useState<MasterlistRecord[]>([])
     const [loading, setLoading] = useState(true)
     const [showForm, setShowForm] = useState(false)
     const [editingRecord, setEditingRecord] = useState<MasterlistRecord | null>(null)
+    const [viewingRecord, setViewingRecord] = useState<MasterlistRecord | null>(null)
     const [searchTerm, setSearchTerm] = useState('')
 
     // Filters
@@ -18,11 +38,7 @@ export default function MasterlistPage() {
     const [categoryFilter, setCategoryFilter] = useState('all')
     const [endpointFilter, setEndpointFilter] = useState('all')
 
-    useEffect(() => {
-        fetchRecords()
-    }, [])
-
-    const fetchRecords = async () => {
+    const fetchRecords = useCallback(async () => {
         try {
             setLoading(true)
             const { data, error } = await supabase
@@ -38,7 +54,11 @@ export default function MasterlistPage() {
         } finally {
             setLoading(false)
         }
-    }
+    }, [])
+
+    useEffect(() => {
+        fetchRecords()
+    }, [fetchRecords])
 
     const handleAdd = () => {
         setEditingRecord(null)
@@ -46,8 +66,13 @@ export default function MasterlistPage() {
     }
 
     const handleEdit = (record: MasterlistRecord) => {
+        setViewingRecord(null)
         setEditingRecord(record)
         setShowForm(true)
+    }
+
+    const handleView = (record: MasterlistRecord) => {
+        setViewingRecord(record)
     }
 
     const handleDelete = async (id: string) => {
@@ -75,11 +100,6 @@ export default function MasterlistPage() {
         fetchRecords()
     }
 
-    // Get unique values for filters
-    const providers = Array.from(new Set(records.map(r => r.provider).filter(Boolean)))
-    const categories = Array.from(new Set(records.map(r => r.category).filter(Boolean)))
-    const endpoints = Array.from(new Set(records.map(r => r.endpoint_classification).filter(Boolean)))
-
     const filteredRecords = records.filter(record => {
         const matchesSearch =
             record.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -91,7 +111,7 @@ export default function MasterlistPage() {
 
         const matchesProvider = providerFilter === 'all' || record.provider === providerFilter
         const matchesCategory = categoryFilter === 'all' || record.category === categoryFilter
-        const matchesEndpoint = endpointFilter === 'all' || (record.endpoint_classification && record.endpoint_classification.includes(endpointFilter))
+        const matchesEndpoint = endpointFilter === 'all' || (record.endpoint_classification && record.endpoint_classification.split(', ').includes(endpointFilter))
 
         return matchesSearch && matchesProvider && matchesCategory && matchesEndpoint
     })
@@ -138,7 +158,7 @@ export default function MasterlistPage() {
                                     className="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#dc3545] outline-none transition-all text-xs font-bold text-gray-700"
                                 >
                                     <option value="all">All Providers</option>
-                                    {providers.map(p => <option key={p} value={p!}>{p}</option>)}
+                                    {PROVIDERS.map(p => <option key={p} value={p}>{p}</option>)}
                                 </select>
 
                                 <select
@@ -147,7 +167,7 @@ export default function MasterlistPage() {
                                     className="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#dc3545] outline-none transition-all text-xs font-bold text-gray-700"
                                 >
                                     <option value="all">All Categories</option>
-                                    {categories.map(c => <option key={c} value={c!}>{c}</option>)}
+                                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
 
                                 <select
@@ -156,7 +176,7 @@ export default function MasterlistPage() {
                                     className="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#dc3545] outline-none transition-all text-xs font-bold text-gray-700"
                                 >
                                     <option value="all">All Endpoints</option>
-                                    {endpoints.map(e => <option key={e} value={e!}>{e}</option>)}
+                                    {ENDPOINT_CLASSIFICATIONS.map(e => <option key={e} value={e}>{e}</option>)}
                                 </select>
                             </div>
 
@@ -209,10 +229,18 @@ export default function MasterlistPage() {
                         <MasterlistTable
                             records={filteredRecords}
                             onEdit={handleEdit}
+                            onView={handleView}
                             onDelete={handleDelete}
                         />
                     )}
                 </div>
+
+                {viewingRecord && (
+                    <MasterlistView
+                        record={viewingRecord}
+                        onClose={() => setViewingRecord(null)}
+                    />
+                )}
             </main>
 
             <footer className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-100 py-4 text-center z-40">

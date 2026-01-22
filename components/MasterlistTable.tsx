@@ -5,10 +5,11 @@ import { MasterlistRecord } from '@/types/masterlist'
 interface MasterlistTableProps {
     records: MasterlistRecord[]
     onEdit: (record: MasterlistRecord) => void
+    onView: (record: MasterlistRecord) => void
     onDelete: (id: string) => void
 }
 
-export default function MasterlistTable({ records, onEdit, onDelete }: MasterlistTableProps) {
+export default function MasterlistTable({ records, onEdit, onView, onDelete }: MasterlistTableProps) {
     const getCategoryColor = (category: string | null) => {
         if (!category) return 'bg-slate-100 text-slate-800'
         const cat = category.toLowerCase()
@@ -38,16 +39,13 @@ export default function MasterlistTable({ records, onEdit, onDelete }: Masterlis
                             Connectivity (URL/IP)
                         </th>
                         <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            Product & Specs
+                            Subs Plan & Endpoint
                         </th>
                         <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            Configuration & Features
+                            Trunk & Extension
                         </th>
                         <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            Contact & Address
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            Category
+                            Contact & Schedule
                         </th>
                         <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                             Actions
@@ -59,14 +57,19 @@ export default function MasterlistTable({ records, onEdit, onDelete }: Masterlis
                         <tr key={record.id} className="hover:bg-slate-50/50 transition-colors group">
                             <td className="px-4 py-4 whitespace-nowrap">
                                 <div className="flex flex-col gap-0.5">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">#{record.sip_id || 'N/A'}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{record.sip_id || 'N/A'}</span>
+                                        <span className={`px-2 py-0.5 text-[9px] font-black rounded-full uppercase tracking-tighter ${getCategoryColor(record.category)}`}>
+                                            {record.category || 'Standard'}
+                                        </span>
+                                    </div>
                                     <span className="text-sm font-semibold text-slate-900">{record.company_name}</span>
                                     <span className="text-[11px] font-medium text-slate-500">{record.provider || 'N/A'}</span>
                                 </div>
                             </td>
                             <td className="px-4 py-4">
                                 <div className="flex flex-col gap-0.5">
-                                    <span className="text-sm font-semibold text-blue-600 truncate max-w-[200px]" title={record.server_url || ''}>
+                                    <span className="text-sm font-semibold text-blue-600 truncate max-w-[180px]" title={record.server_url || ''}>
                                         {record.server_url || 'N/A'}
                                     </span>
                                     <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500">
@@ -77,43 +80,50 @@ export default function MasterlistTable({ records, onEdit, onDelete }: Masterlis
                             </td>
                             <td className="px-4 py-4">
                                 <div className="flex flex-col gap-0.5">
-                                    <span className="text-sm font-semibold text-slate-900">{record.subscription_plan || 'N/A'}</span>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">T/L:</span>
-                                            <span>{record.trunks_lines}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">EXT:</span>
-                                            <span>{record.extensions}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td className="px-4 py-4 max-w-[250px]">
-                                <div className="flex flex-col gap-0.5">
-                                    <span className="text-[11px] font-medium text-slate-900 line-clamp-1" title={record.custom_features || ''}>
-                                        {record.custom_features || 'N/A'}
+                                    <span className="text-sm font-semibold text-slate-900">{record.subscription_plan || 'No Plan'}</span>
+                                    <span className="text-[11px] font-medium text-slate-500 italic truncate max-w-[200px]" title={record.endpoint_classification || ''}>
+                                        {record.endpoint_classification || 'No Endpoint'}
                                     </span>
-                                    <span className="text-[10px] text-slate-500 italic truncate" title={record.endpoint_classification || ''}>
-                                        {record.endpoint_classification || 'N/A'}
-                                    </span>
-                                </div>
-                            </td>
-                            <td className="px-4 py-4 max-w-[200px]">
-                                <div className="flex flex-col gap-0.5">
-                                    <span className="text-[11px] font-bold text-slate-700">{record.client_contact || 'No Contact'}</span>
-                                    <span className="text-[10px] text-slate-400 truncate tracking-tight">{record.client_address || 'No Address'}</span>
-                                    <span className="text-[10px] text-slate-500 font-medium">Schedule: {record.office_hours || 'N/A'}</span>
                                 </div>
                             </td>
                             <td className="px-4 py-4">
-                                <span className={`px-3 py-1 inline-flex text-[10px] leading-4 font-bold rounded-full shadow-sm border uppercase tracking-wider ${getCategoryColor(record.category)}`}>
-                                    {record.category || 'Standard'}
-                                </span>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex flex-col items-center px-2 py-1 bg-slate-50 rounded-lg min-w-[50px]">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Trunks</span>
+                                        <span className="text-sm font-bold text-slate-700">{record.trunks_lines}</span>
+                                    </div>
+                                    <div className="flex flex-col items-center px-2 py-1 bg-slate-50 rounded-lg min-w-[50px]">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Exts</span>
+                                        <span className="text-sm font-bold text-slate-700">{record.extensions}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td className="px-4 py-4 max-w-[220px]">
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="text-[11px] font-bold text-slate-700 truncate">{record.client_contact || 'No PIC'}</span>
+                                    <span className="text-[10px] text-slate-400 truncate tracking-tight" title={record.client_address || ''}>
+                                        {record.client_address || 'No Contact No.'}
+                                    </span>
+                                    <div className="flex items-center gap-1 mt-0.5">
+                                        <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span className="text-[10px] text-slate-500 font-medium">{record.office_hours || 'N/A'}</span>
+                                    </div>
+                                </div>
                             </td>
                             <td className="px-4 py-4 text-right">
                                 <div className="flex justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        onClick={() => onView(record)}
+                                        className="p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
+                                        title="View Details"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </button>
                                     <button
                                         onClick={() => onEdit(record)}
                                         className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"

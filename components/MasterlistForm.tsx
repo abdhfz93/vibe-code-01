@@ -10,29 +10,29 @@ interface MasterlistFormProps {
     onCancel: () => void
 }
 
-const PROVIDERS = ['Singtel', 'MyRepublic']
+const PROVIDERS = ['MyRepublic', 'Singtel']
 const SUBSCRIPTION_PLANS = [
-    'XCally',
-    'Nautilus Talk CC',
-    'Nautilus Talk Basic',
     'IP Phone / Softphone',
+    'MS Teams',
+    'Nautilus Talk Basic',
+    'Nautilus Talk CC',
     'Salesforce',
     'Webphone',
-    'MS Teams'
+    'XCally'
 ]
 const ENDPOINT_CLASSIFICATIONS = [
-    'Webphone',
-    'Nautilus Connect (Mobile App)',
-    'Nautilus Desk (Softphone)',
-    'Zoiper (Softphone)',
-    'IP phone (Hardphone)',
-    'GS Wave (Mobile App)',
-    'SIP Trunk',
     'ATA (Gateway)',
-    'UCM - Grandstream PBX',
     'Call Forwarding',
     'Door phone',
-    'Nautilus Go (Mobile App)'
+    'GS Wave (Mobile App)',
+    'IP phone (Hardphone)',
+    'Nautilus Connect (Mobile App)',
+    'Nautilus Desk (Softphone)',
+    'Nautilus Go (Mobile App)',
+    'SIP Trunk',
+    'UCM - Grandstream PBX',
+    'Webphone',
+    'Zoiper (Softphone)'
 ]
 const CUSTOM_FEATURES_OPTIONS = [
     'Call Rating',
@@ -63,6 +63,7 @@ export default function MasterlistForm({ record, onSuccess, onCancel }: Masterli
     })
 
     const [selectedFeatures, setSelectedFeatures] = useState<string[]>([])
+    const [selectedEndpoints, setSelectedEndpoints] = useState<string[]>([])
 
     useEffect(() => {
         if (record) {
@@ -86,6 +87,9 @@ export default function MasterlistForm({ record, onSuccess, onCancel }: Masterli
             if (record.custom_features) {
                 setSelectedFeatures(record.custom_features.split(', ').filter(Boolean))
             }
+            if (record.endpoint_classification) {
+                setSelectedEndpoints(record.endpoint_classification.split(', ').filter(Boolean))
+            }
         }
     }, [record])
 
@@ -105,6 +109,17 @@ export default function MasterlistForm({ record, onSuccess, onCancel }: Masterli
         setFormData(prev => ({
             ...prev,
             custom_features: updated.join(', ')
+        }))
+    }
+
+    const toggleEndpoint = (endpoint: string) => {
+        const updated = selectedEndpoints.includes(endpoint)
+            ? selectedEndpoints.filter(e => e !== endpoint)
+            : [...selectedEndpoints, endpoint]
+        setSelectedEndpoints(updated)
+        setFormData(prev => ({
+            ...prev,
+            endpoint_classification: updated.join(', ')
         }))
     }
 
@@ -199,9 +214,9 @@ export default function MasterlistForm({ record, onSuccess, onCancel }: Masterli
                             className={inputClasses}
                         >
                             <option value="">Select Priority</option>
+                            <option value="Grow Profile">Grow Profile</option>
                             <option value="High Profile">High Profile</option>
                             <option value="Medium Profile">Medium Profile</option>
-                            <option value="Grow Profile">Grow Profile</option>
                         </select>
                     </div>
 
@@ -267,22 +282,6 @@ export default function MasterlistForm({ record, onSuccess, onCancel }: Masterli
 
                     <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Endpoint Classification
-                        </label>
-                        <select
-                            name="endpoint_classification"
-                            value={formData.endpoint_classification}
-                            onChange={handleChange}
-                            className={inputClasses}
-                        >
-                            <option value="">Select Endpoint</option>
-                            {ENDPOINT_CLASSIFICATIONS.map(e => <option key={e} value={e}>{e}</option>)}
-                        </select>
-                    </div>
-
-                    {/* Schedule & Specs */}
-                    <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
                             Office Hours
                         </label>
                         <div className="flex items-center gap-2">
@@ -310,6 +309,7 @@ export default function MasterlistForm({ record, onSuccess, onCancel }: Masterli
                         </div>
                     </div>
 
+                    {/* Capacity Info */}
                     <div className="md:col-span-1">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Trunks / Lines
@@ -336,10 +336,9 @@ export default function MasterlistForm({ record, onSuccess, onCancel }: Masterli
                         />
                     </div>
 
-                    {/* Contact Info */}
                     <div className="md:col-span-1">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Client Contact
+                            Client PIC
                         </label>
                         <input
                             type="text"
@@ -351,9 +350,9 @@ export default function MasterlistForm({ record, onSuccess, onCancel }: Masterli
                         />
                     </div>
 
-                    <div className="md:col-span-3">
+                    <div className="md:col-span-1">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Client Address
+                            Client Contact No.
                         </label>
                         <input
                             type="text"
@@ -361,13 +360,37 @@ export default function MasterlistForm({ record, onSuccess, onCancel }: Masterli
                             value={formData.client_address}
                             onChange={handleChange}
                             className={inputClasses}
-                            placeholder="Office Address"
+                            placeholder="e.g. +65 1234 5678"
                         />
                     </div>
 
                     <div className="md:col-span-4">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Custom Features
+                            Endpoint Classification (Multi-select)
+                        </label>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                            {ENDPOINT_CLASSIFICATIONS.map(endpoint => (
+                                <button
+                                    key={endpoint}
+                                    type="button"
+                                    onClick={() => toggleEndpoint(endpoint)}
+                                    className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all border ${selectedEndpoints.includes(endpoint)
+                                        ? 'bg-slate-700 text-white border-slate-700 shadow-md'
+                                        : 'bg-white text-slate-500 border-gray-200 hover:border-slate-400 hover:text-slate-700'
+                                        }`}
+                                >
+                                    {endpoint}
+                                    {selectedEndpoints.includes(endpoint) && (
+                                        <span className="ml-2 font-bold">✓</span>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="md:col-span-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Custom Features (Multi-select)
                         </label>
                         <div className="flex flex-wrap gap-2 mt-1">
                             {CUSTOM_FEATURES_OPTIONS.map(feature => (
