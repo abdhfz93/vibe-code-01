@@ -64,6 +64,7 @@ export default function MasterlistForm({ record, onSuccess, onCancel }: Masterli
 
     const [selectedFeatures, setSelectedFeatures] = useState<string[]>([])
     const [selectedEndpoints, setSelectedEndpoints] = useState<string[]>([])
+    const [selectedProviders, setSelectedProviders] = useState<string[]>([])
 
     useEffect(() => {
         if (record) {
@@ -89,6 +90,9 @@ export default function MasterlistForm({ record, onSuccess, onCancel }: Masterli
             }
             if (record.endpoint_classification) {
                 setSelectedEndpoints(record.endpoint_classification.split(', ').filter(Boolean))
+            }
+            if (record.provider) {
+                setSelectedProviders(record.provider.split(', ').filter(Boolean))
             }
         }
     }, [record])
@@ -120,6 +124,17 @@ export default function MasterlistForm({ record, onSuccess, onCancel }: Masterli
         setFormData(prev => ({
             ...prev,
             endpoint_classification: updated.join(', ')
+        }))
+    }
+
+    const toggleProvider = (provider: string) => {
+        const updated = selectedProviders.includes(provider)
+            ? selectedProviders.filter(p => p !== provider)
+            : [...selectedProviders, provider]
+        setSelectedProviders(updated)
+        setFormData(prev => ({
+            ...prev,
+            provider: updated.join(', ')
         }))
     }
 
@@ -249,19 +264,25 @@ export default function MasterlistForm({ record, onSuccess, onCancel }: Masterli
                         />
                     </div>
 
-                    <div className="md:col-span-1">
+                    <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Provider
+                            Provider (Select one or more)
                         </label>
-                        <select
-                            name="provider"
-                            value={formData.provider}
-                            onChange={handleChange}
-                            className={inputClasses}
-                        >
-                            <option value="">Select Provider</option>
-                            {PROVIDERS.map(p => <option key={p} value={p}>{p}</option>)}
-                        </select>
+                        <div className="flex flex-wrap gap-4 p-3 border border-gray-300 rounded-lg bg-white">
+                            {PROVIDERS.map((provider) => (
+                                <label key={provider} className="flex items-center space-x-2 cursor-pointer group">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedProviders.includes(provider)}
+                                        onChange={() => toggleProvider(provider)}
+                                        className="rounded border-gray-300 text-[#dc3545] focus:ring-[#dc3545] h-4 w-4"
+                                    />
+                                    <span className="text-sm font-medium text-gray-700 group-hover:text-slate-900 transition-colors">
+                                        {provider}
+                                    </span>
+                                </label>
+                            ))}
+                        </div>
                     </div>
 
                     {/* Product Info */}
