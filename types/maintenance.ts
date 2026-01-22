@@ -4,6 +4,12 @@ export type MaintenanceReason = 'Portal Upgrade' | 'DB Migration' | 'OS Patching
 export type Approver = 'john' | 'sayem' | 'naveed'
 export type PerformedBy = 'aiman' | 'hafiz' | 'shahid'
 export type Status = 'pending' | 'on-hold' | 'failed' | 'completed'
+export type ChecklistStatus = 'pass' | 'fail' | 'not-tested'
+
+export interface ChecklistItem {
+  label: string
+  status: ChecklistStatus
+}
 
 export interface MaintenanceRecord {
   id: string
@@ -20,6 +26,7 @@ export interface MaintenanceRecord {
   status: Status
   proof_of_maintenance: string[] | null
   remark: string | null
+  checklist?: ChecklistItem[] | null
   created_at: string
   updated_at: string
 }
@@ -36,4 +43,5 @@ export interface MaintenanceRecordInput {
   status: Status
   proof_of_maintenance?: string[]
   remark?: string
+  checklist?: ChecklistItem[]
 }

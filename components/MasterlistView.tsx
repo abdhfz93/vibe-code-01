@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { MasterlistRecord } from '@/types/masterlist'
 
 interface MasterlistViewProps {
@@ -36,6 +36,15 @@ export default function MasterlistView({ record, onClose }: MasterlistViewProps)
         setTimeout(() => setCopied(false), 2000)
     }
 
+    // Handle ESC key to close
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose()
+        }
+        window.addEventListener('keydown', handleEsc)
+        return () => window.removeEventListener('keydown', handleEsc)
+    }, [onClose])
+
     const copySingle = (text: string) => {
         navigator.clipboard.writeText(text)
     }
@@ -50,8 +59,8 @@ export default function MasterlistView({ record, onClose }: MasterlistViewProps)
                         <button
                             onClick={copyAll}
                             className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${copied
-                                    ? 'bg-green-500 text-white'
-                                    : 'bg-slate-800 text-white hover:bg-slate-700'
+                                ? 'bg-green-500 text-white'
+                                : 'bg-slate-800 text-white hover:bg-slate-700'
                                 }`}
                         >
                             {copied ? (

@@ -101,13 +101,25 @@ export default function MasterlistPage() {
     }
 
     const filteredRecords = records.filter(record => {
-        const matchesSearch =
-            record.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (record.sip_id && record.sip_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
-            (record.ip_address && record.ip_address.toLowerCase().includes(searchTerm.toLowerCase())) ||
-            (record.server_url && record.server_url.toLowerCase().includes(searchTerm.toLowerCase())) ||
-            (record.custom_features && record.custom_features.toLowerCase().includes(searchTerm.toLowerCase())) ||
-            (record.subscription_plan && record.subscription_plan.toLowerCase().includes(searchTerm.toLowerCase()))
+        const term = searchTerm.toLowerCase().trim()
+        const isExact = term.startsWith('"') && term.endsWith('"') && term.length > 2
+        const searchStr = isExact ? term.slice(1, -1) : term
+
+        const matchesSearch = isExact ? (
+            record.company_name.toLowerCase() === searchStr ||
+            (record.sip_id && record.sip_id.toLowerCase() === searchStr) ||
+            (record.ip_address && record.ip_address.toLowerCase() === searchStr) ||
+            (record.server_url && record.server_url.toLowerCase() === searchStr) ||
+            (record.custom_features && record.custom_features.toLowerCase() === searchStr) ||
+            (record.subscription_plan && record.subscription_plan.toLowerCase() === searchStr)
+        ) : (
+            record.company_name.toLowerCase().includes(searchStr) ||
+            (record.sip_id && record.sip_id.toLowerCase().includes(searchStr)) ||
+            (record.ip_address && record.ip_address.toLowerCase().includes(searchStr)) ||
+            (record.server_url && record.server_url.toLowerCase().includes(searchStr)) ||
+            (record.custom_features && record.custom_features.toLowerCase().includes(searchStr)) ||
+            (record.subscription_plan && record.subscription_plan.toLowerCase().includes(searchStr))
+        )
 
         const matchesProvider = providerFilter === 'all' || record.provider === providerFilter
         const matchesCategory = categoryFilter === 'all' || record.category === categoryFilter
@@ -193,18 +205,6 @@ export default function MasterlistPage() {
             </div>
 
             <main className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-                {/* Construction Banner */}
-                <div className="mb-6 bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h4 className="text-sm font-bold text-amber-900">Feature Under Construction</h4>
-                        <p className="text-xs text-amber-700">The Customer Masterlist is currently being populated and refined. Some functions may be limited.</p>
-                    </div>
-                </div>
 
                 {showForm && (
                     <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-300">

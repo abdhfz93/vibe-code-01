@@ -1,17 +1,67 @@
 'use client'
 
-import { useState } from 'react'
-import { MaintenanceRecord } from '@/types/maintenance'
+import { useState, useEffect } from 'react'
+import { MaintenanceRecord, ChecklistItem } from '@/types/maintenance'
+import MaintenanceSummaryView from './MaintenanceSummaryView'
 
 interface MaintenanceTableProps {
   records: MaintenanceRecord[]
   onEdit: (record: MaintenanceRecord) => void
   onCopy: (record: MaintenanceRecord) => void
   onDelete: (id: string) => void
+  onUpdateChecklist: (recordId: string, checklist: ChecklistItem[]) => Promise<void>
 }
 
-export default function MaintenanceTable({ records, onEdit, onCopy, onDelete }: MaintenanceTableProps) {
+export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, onUpdateChecklist }: MaintenanceTableProps) {
   const [selectedRemark, setSelectedRemark] = useState<string | null>(null)
+  const [selectedChecklistRecord, setSelectedChecklistRecord] = useState<MaintenanceRecord | null>(null)
+  const [selectedSummaryRecord, setSelectedSummaryRecord] = useState<MaintenanceRecord | null>(null)
+  const [localChecklists, setLocalChecklists] = useState<Record<string, { label: string, status: 'pass' | 'fail' | 'not-tested' }[]>>({})
+
+  const defaultChecklistItems = [
+    "Able to make outbound calls",
+    "Ticket created for outbound calls",
+    "Able to receive incoming calls",
+    "Ticket created for incoming calls",
+    "Call can be automatically rated",
+    "Able to transcribe the calls"
+  ]
+
+  const handleStatusChange = async (recordId: string, itemLabel: string, newStatus: 'pass' | 'fail' | 'not-tested') => {
+    const record = records.find(r => r.id === recordId)
+    const existingChecklist = localChecklists[recordId] || record?.checklist || []
+
+    // Always use defaultChecklistItems as the base to ensure all 6 items are present
+    const updatedChecklist = defaultChecklistItems.map(label => {
+      const existingItem = existingChecklist.find(i => i.label === label)
+      if (label === itemLabel) {
+        return { label, status: newStatus }
+      }
+      return existingItem || { label, status: 'not-tested' }
+    }) as ChecklistItem[]
+
+    setLocalChecklists(prev => ({ ...prev, [recordId]: updatedChecklist }))
+
+    try {
+      await onUpdateChecklist(recordId, updatedChecklist)
+    } catch (error) {
+      console.error('Failed to update checklist:', error)
+      alert('Failed to save checklist state. Please try again.')
+    }
+  }
+
+  // Handle ESC key to close modals
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedRemark(null)
+        setSelectedChecklistRecord(null)
+        setSelectedSummaryRecord(null)
+      }
+    }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -86,7 +136,7 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete }: 
               Status
             </th>
             <th className="px-4 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-              Proof
+              Proof / Checklist
             </th>
             <th className="px-4 py-3 text-right text-[10px] font-bold text-gray-400 uppercase tracking-widest">
               Actions
@@ -176,21 +226,40 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete }: 
                       }
                     }
 
-                    if (proofs.length === 0) return <span>No Proof</span>
+                    const checklistButton = (
+                      <button
+                        onClick={() => setSelectedChecklistRecord(record)}
+                        className="text-[10px] font-bold text-indigo-600 bg-indigo-50/50 hover:bg-indigo-100/80 px-2 py-0.5 rounded transition-colors uppercase tracking-tight flex items-center gap-1 w-fit mt-1"
+                      >
+                        Checklist
+                      </button>
+                    );
+
+                    if (proofs.length === 0) {
+                      return (
+                        <div className="flex flex-col gap-1">
+                          <span className="text-slate-400">No Proof</span>
+                          {checklistButton}
+                        </div>
+                      )
+                    }
 
                     return (
-                      <div className="flex gap-1">
-                        {proofs.map((url, index) => (
-                          <a
-                            key={index}
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-4 h-4 flex items-center justify-center bg-slate-100 text-slate-500 rounded text-[9px] font-bold hover:bg-[#dc3545] hover:text-white transition-all shadow-sm"
-                          >
-                            {index + 1}
-                          </a>
-                        ))}
+                      <div className="flex flex-col gap-1">
+                        <div className="flex gap-1">
+                          {proofs.map((url, index) => (
+                            <a
+                              key={index}
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-4 h-4 flex items-center justify-center bg-slate-100 text-slate-500 rounded text-[9px] font-bold hover:bg-[#dc3545] hover:text-white transition-all shadow-sm"
+                            >
+                              {index + 1}
+                            </a>
+                          ))}
+                        </div>
+                        {checklistButton}
                       </div>
                     )
                   })()}
@@ -198,6 +267,15 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete }: 
               </td>
               <td className="px-4 py-4 text-right">
                 <div className="flex justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => setSelectedSummaryRecord(record)}
+                    className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg"
+                    title="Summary"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </button>
                   <button
                     onClick={() => onEdit(record)}
                     className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"
@@ -232,6 +310,87 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete }: 
         </tbody>
       </table>
 
+      {/* Checklist Modal */}
+      {selectedChecklistRecord !== null && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div
+              className="fixed inset-0 transition-opacity"
+              aria-hidden="true"
+              onClick={() => setSelectedChecklistRecord(null)}
+            >
+              <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
+            </div>
+
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-slate-100">
+              <div className="bg-white px-6 pt-6 pb-4">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex flex-col">
+                    <h3 className="text-lg font-bold text-slate-900 leading-tight">
+                      Maintenance Checklist
+                    </h3>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mt-1">
+                      {selectedChecklistRecord.maintenance_number} &bull; {selectedChecklistRecord.server_name}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedChecklistRecord(null)}
+                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {defaultChecklistItems.map((item, index) => {
+                    const record = records.find(r => r.id === selectedChecklistRecord.id)
+                    const recordChecklist = localChecklists[selectedChecklistRecord.id] || record?.checklist;
+                    const recordItem = recordChecklist?.find(i => i.label === item);
+                    const status = recordItem?.status || 'not-tested';
+
+                    return (
+                      <div key={index} className="flex items-center justify-between p-3 rounded-xl border border-slate-50 bg-slate-50/30 hover:bg-slate-50 transition-colors group">
+                        <span className="text-sm font-medium text-slate-700">{item}</span>
+                        <div className="flex gap-1">
+                          {(['pass', 'fail', 'not-tested'] as const).map((s) => (
+                            <button
+                              key={s}
+                              onClick={() => handleStatusChange(selectedChecklistRecord.id, item, s)}
+                              className={`px-2 py-1 text-[10px] font-bold rounded-md uppercase tracking-tighter transition-all ${status === s
+                                ? s === 'pass'
+                                  ? 'bg-green-500 text-white shadow-sm'
+                                  : s === 'fail'
+                                    ? 'bg-red-500 text-white shadow-sm'
+                                    : 'bg-slate-500 text-white shadow-sm'
+                                : 'bg-white text-slate-400 border border-slate-200 hover:border-slate-300'
+                                }`}
+                            >
+                              {s === 'not-tested' ? 'N/A' : s}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="bg-slate-50 px-6 py-4 flex justify-end">
+                <button
+                  type="button"
+                  className="px-4 py-2 bg-[#dc3545] text-white text-sm font-bold rounded-xl hover:bg-[#bb2d3b] transition-colors shadow-md shadow-red-100"
+                  onClick={() => setSelectedChecklistRecord(null)}
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Remark Modal */}
       {selectedRemark !== null && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -241,30 +400,36 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete }: 
               aria-hidden="true"
               onClick={() => setSelectedRemark(null)}
             >
-              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+              <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
             </div>
 
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                      Remark
-                    </h3>
-                    <div className="mt-2">
-                      <p className="text-sm text-gray-500 whitespace-pre-wrap break-words">
-                        {selectedRemark || 'No remark added.'}
-                      </p>
-                    </div>
-                  </div>
+            <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-slate-100">
+              <div className="bg-white px-6 pt-6 pb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-slate-900 leading-tight">
+                    Maintenance Remark
+                  </h3>
+                  <button
+                    onClick={() => setSelectedRemark(null)}
+                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="p-4 bg-slate-50/50 rounded-xl border border-slate-100">
+                  <p className="text-sm text-slate-600 font-medium leading-relaxed whitespace-pre-wrap break-words">
+                    {selectedRemark || 'No remark added.'}
+                  </p>
                 </div>
               </div>
-              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+              <div className="bg-slate-50 px-6 py-4 flex justify-end">
                 <button
                   type="button"
-                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                  className="px-6 py-2 bg-[#dc3545] text-white text-sm font-bold rounded-xl hover:bg-[#bb2d3b] transition-colors shadow-md shadow-red-100"
                   onClick={() => setSelectedRemark(null)}
                 >
                   Close
@@ -273,6 +438,14 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete }: 
             </div>
           </div>
         </div>
+      )}
+
+      {/* Summary Modal */}
+      {selectedSummaryRecord && (
+        <MaintenanceSummaryView
+          record={selectedSummaryRecord}
+          onClose={() => setSelectedSummaryRecord(null)}
+        />
       )}
     </div>
   )

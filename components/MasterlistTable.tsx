@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { MasterlistRecord } from '@/types/masterlist'
 
 interface MasterlistTableProps {
@@ -21,6 +21,15 @@ export default function MasterlistTable({ records, onEdit, onView, onDelete }: M
         if (cat.includes('medium')) return 'bg-amber-100 text-amber-800'
         return 'bg-slate-100 text-slate-800'
     }
+
+    // Handle ESC key to close modal
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setSelectedRemark(null)
+        }
+        window.addEventListener('keydown', handleEsc)
+        return () => window.removeEventListener('keydown', handleEsc)
+    }, [])
 
     if (records.length === 0) {
         return (

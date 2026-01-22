@@ -90,6 +90,28 @@ export default function MaintenancePage() {
     }
   }
 
+  const handleUpdateChecklist = async (recordId: string, checklist: any[]) => {
+    try {
+      const { error } = await supabase
+        .from('maintenance_records')
+        .update({
+          checklist: checklist,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', recordId)
+
+      if (error) throw error
+
+      // Update local state without full refetch for better UX
+      setRecords(prev => prev.map(r =>
+        r.id === recordId ? { ...r, checklist } : r
+      ))
+    } catch (error) {
+      console.error('Error updating checklist:', error)
+      throw error // Re-throw to be handled by the component
+    }
+  }
+
   const handleFormSubmit = () => {
     setShowForm(false)
     setEditingRecord(null)
@@ -114,6 +136,7 @@ export default function MaintenancePage() {
       record.maintenance_reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
       record.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
       record.performed_by.toLowerCase().includes(searchTerm.toLowerCase())
+
     const matchesStatus = statusFilter === 'all' || record.status === statusFilter
     return matchesSearch && matchesStatus
   })
@@ -213,6 +236,7 @@ export default function MaintenancePage() {
               onEdit={handleEdit}
               onCopy={handleCopy}
               onDelete={handleDelete}
+              onUpdateChecklist={handleUpdateChecklist}
             />
           )}
         </div>
