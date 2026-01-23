@@ -8,6 +8,7 @@ import { IncidentReport } from '@/types/incident'
 export default function IncidentPage() {
     const [context, setContext] = useState('')
     const [report, setReport] = useState('')
+    const [displayedTitle, setDisplayedTitle] = useState('')
     const [loading, setLoading] = useState(false)
     const [copied, setCopied] = useState(false)
     const [showForm, setShowForm] = useState(false)
@@ -101,6 +102,7 @@ export default function IncidentPage() {
                     alert(errorMsg + `\n\nPlease check your Supabase table schema.`);
                 }
                 setReport(data.report)
+                setDisplayedTitle(formatIncidentTitle(sipId, clientName, incidentDate))
                 setShowForm(false) // Close form on success
                 fetchHistory() // Refresh the past incidents list
                 setTimeout(() => {
@@ -140,6 +142,7 @@ export default function IncidentPage() {
 
     const viewPastReport = (inc: IncidentReport) => {
         setReport(inc.content)
+        setDisplayedTitle(formatIncidentTitle(inc.sip_id, inc.client_name, inc.incident_date))
         setTimeout(() => {
             reportRef.current?.scrollIntoView({ behavior: 'smooth' })
         }, 100)
@@ -363,9 +366,19 @@ export default function IncidentPage() {
                     >
                         <div className="p-8 bg-slate-50/50 border-b border-slate-100">
                             <div className="flex justify-between items-center">
-                                <h2 className="text-xl font-black text-slate-800 tracking-tight uppercase">GENERATED REPORT</h2>
+                                <div className="flex flex-col">
+                                    <h2 className="text-xl font-black text-slate-800 tracking-tight uppercase">GENERATED REPORT</h2>
+                                    {displayedTitle && (
+                                        <p className="text-[11px] font-black text-[#dc3545] uppercase tracking-widest mt-1">
+                                            {displayedTitle}
+                                        </p>
+                                    )}
+                                </div>
                                 <button
-                                    onClick={() => setReport('')}
+                                    onClick={() => {
+                                        setReport('')
+                                        setDisplayedTitle('')
+                                    }}
                                     className="p-2 text-slate-400 hover:text-[#dc3545] hover:bg-[#dc3545]/10 rounded-xl transition-all group flex items-center gap-2"
                                     title="Close Report"
                                 >
@@ -492,11 +505,11 @@ export default function IncidentPage() {
                     &copy; {new Date().getFullYear().toString()} Nautilus SIP Pte Ltd.
                 </p>
                 <div className="flex justify-center gap-4">
-                    <a href="/maintenance" className="text-[10px] text-[#dc3545] font-bold hover:underline">Maintenance Record</a>
+                    <a href="/masterlist" className="text-[10px] text-[#dc3545] font-bold hover:underline">Customer Masterlist</a>
                     <span className="text-gray-200 text-[10px]">|</span>
                     <span className="text-[10px] text-gray-400 font-bold">Incident Report</span>
                     <span className="text-gray-200 text-[10px]">|</span>
-                    <a href="/masterlist" className="text-[10px] text-[#dc3545] font-bold hover:underline">Customer Masterlist</a>
+                    <a href="/maintenance" className="text-[10px] text-[#dc3545] font-bold hover:underline">Maintenance Record</a>
                 </div>
             </footer>
 

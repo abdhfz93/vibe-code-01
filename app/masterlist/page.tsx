@@ -240,11 +240,11 @@ export default function MasterlistPage() {
                     &copy; {new Date().getFullYear()} Nautilus SIP Pte Ltd.
                 </p>
                 <div className="flex justify-center gap-4">
-                    <a href="/maintenance" className="text-[10px] text-[#dc3545] font-bold hover:underline">Maintenance Record</a>
+                    <span className="text-[10px] text-gray-400 font-bold">Customer Masterlist</span>
                     <span className="text-gray-200 text-[10px]">|</span>
                     <a href="/incident" className="text-[10px] text-[#dc3545] font-bold hover:underline">Incident Report</a>
                     <span className="text-gray-200 text-[10px]">|</span>
-                    <span className="text-[10px] text-gray-400 font-bold">Customer Masterlist</span>
+                    <a href="/maintenance" className="text-[10px] text-[#dc3545] font-bold hover:underline">Maintenance Record</a>
                 </div>
             </footer>
         </div>

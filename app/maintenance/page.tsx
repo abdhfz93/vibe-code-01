@@ -308,11 +308,11 @@ export default function MaintenancePage() {
           &copy; {new Date().getFullYear()} Nautilus SIP Pte Ltd.
         </p>
         <div className="flex justify-center gap-4">
-          <span className="text-[10px] text-gray-400 font-bold">Maintenance Record</span>
+          <a href="/masterlist" className="text-[10px] text-[#dc3545] font-bold hover:underline">Customer Masterlist</a>
           <span className="text-gray-200 text-[10px]">|</span>
           <a href="/incident" className="text-[10px] text-[#dc3545] font-bold hover:underline">Incident Report</a>
           <span className="text-gray-200 text-[10px]">|</span>
-          <a href="/masterlist" className="text-[10px] text-[#dc3545] font-bold hover:underline">Customer Masterlist</a>
+          <span className="text-[10px] text-gray-400 font-bold">Maintenance Record</span>
         </div>
       </footer>
     </div>

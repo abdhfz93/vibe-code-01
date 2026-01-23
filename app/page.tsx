@@ -13,19 +13,6 @@ export default function Home() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <Link
-            href="/maintenance"
-            className="group p-6 bg-white border-2 border-slate-100 rounded-2xl hover:border-[#dc3545] transition-all hover:shadow-lg hover:shadow-[#dc3545]/5 text-left"
-          >
-            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-[#dc3545]/10 group-hover:text-[#dc3545] text-slate-400 transition-colors">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-            </div>
-            <h2 className="text-lg font-bold text-gray-900 mt-2">Maintenance Record</h2>
-            <p className="text-sm text-gray-500 mt-1">Submit and track Nautilus server maintenance records.</p>
-          </Link>
-
-          <Link
             href="/masterlist"
             className="group p-6 bg-white border-2 border-slate-100 rounded-2xl hover:border-[#dc3545] transition-all hover:shadow-lg hover:shadow-[#dc3545]/5 text-left"
           >
@@ -49,6 +36,19 @@ export default function Home() {
             </div>
             <h2 className="text-lg font-bold text-gray-900 mt-2">Incident Report</h2>
             <p className="text-sm text-gray-500 mt-1">Generate technical reports from conversation logs.</p>
+          </Link>
+
+          <Link
+            href="/maintenance"
+            className="group p-6 bg-white border-2 border-slate-100 rounded-2xl hover:border-[#dc3545] transition-all hover:shadow-lg hover:shadow-[#dc3545]/5 text-left"
+          >
+            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-[#dc3545]/10 group-hover:text-[#dc3545] text-slate-400 transition-colors">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+            <h2 className="text-lg font-bold text-gray-900 mt-2">Maintenance Record</h2>
+            <p className="text-sm text-gray-500 mt-1">Submit and track Nautilus server maintenance records.</p>
           </Link>
         </div>
 
