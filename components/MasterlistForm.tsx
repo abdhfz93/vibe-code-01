@@ -99,9 +99,15 @@ export default function MasterlistForm({ record, onSuccess, onCancel }: Masterli
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target
+        let processedValue = value
+
+        if (name === 'client_address') {
+            processedValue = value.replace(/\D/g, '')
+        }
+
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'number' ? parseInt(value) || 0 : value
+            [name]: type === 'number' ? parseInt(processedValue) || 0 : processedValue
         }))
     }
 
@@ -213,8 +219,8 @@ export default function MasterlistForm({ record, onSuccess, onCancel }: Masterli
                             required
                             value={formData.company_name}
                             onChange={handleChange}
-                            className={inputClasses + " font-bold"}
-                            placeholder="Name of Client"
+                            className={inputClasses}
+                            placeholder="e.g Certis"
                         />
                     </div>
 
@@ -245,8 +251,8 @@ export default function MasterlistForm({ record, onSuccess, onCancel }: Masterli
                             name="ip_address"
                             value={formData.ip_address}
                             onChange={handleChange}
-                            className={inputClasses + " font-mono"}
-                            placeholder="8.8.8.8"
+                            className={inputClasses}
+                            placeholder="Server Public IP"
                         />
                     </div>
 
@@ -259,8 +265,8 @@ export default function MasterlistForm({ record, onSuccess, onCancel }: Masterli
                             name="server_url"
                             value={formData.server_url}
                             onChange={handleChange}
-                            className={inputClasses + " text-blue-600 font-semibold"}
-                            placeholder="certissg-corp.nautilus.com"
+                            className={inputClasses}
+                            placeholder="certissg-corp.nautilus.zone"
                         />
                     </div>
 
@@ -378,10 +384,11 @@ export default function MasterlistForm({ record, onSuccess, onCancel }: Masterli
                         <input
                             type="text"
                             name="client_address"
+                            inputMode="numeric"
                             value={formData.client_address}
                             onChange={handleChange}
                             className={inputClasses}
-                            placeholder="e.g. +65 1234 5678"
+                            placeholder="e.g. 61234567"
                         />
                     </div>
 

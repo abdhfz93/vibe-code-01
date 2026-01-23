@@ -37,8 +37,8 @@ const STATUS_OPTIONS: Status[] = ['completed', 'failed', 'on-hold', 'pending']
 
 export default function MaintenanceForm({ record, isCopy, onSuccess, onCancel }: MaintenanceFormProps) {
   const [formData, setFormData] = useState<MaintenanceRecordInput>({
-    server_name: 'sip11',
-    client_name: 'Certis',
+    server_name: 'Other Server',
+    client_name: 'Other Client',
     maintenance_date: '',
     start_time: '',
     end_time: '',
@@ -253,7 +253,7 @@ export default function MaintenanceForm({ record, isCopy, onSuccess, onCancel }:
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-inner">
       <h2 className="text-xl font-semibold mb-4">
-        {isCopy ? 'Copy Nautilus Record' : record ? 'Edit Nautilus Record' : 'Add New Nautilus Record'}
+        {isCopy ? 'Copy Nautilus Record' : record ? 'Edit Nautilus Record' : 'Add New Maintenance Record'}
       </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

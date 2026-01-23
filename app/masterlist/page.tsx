@@ -34,7 +34,6 @@ export default function MasterlistPage() {
     const [searchTerm, setSearchTerm] = useState('')
 
     // Filters
-    const [providerFilter, setProviderFilter] = useState('all')
     const [categoryFilter, setCategoryFilter] = useState('all')
     const [endpointFilter, setEndpointFilter] = useState('all')
 
@@ -123,11 +122,10 @@ export default function MasterlistPage() {
             (record.subscription_plan && record.subscription_plan.toLowerCase().includes(searchStr))
         )
 
-        const matchesProvider = providerFilter === 'all' || record.provider === providerFilter
         const matchesCategory = categoryFilter === 'all' || record.category === categoryFilter
         const matchesEndpoint = endpointFilter === 'all' || (record.endpoint_classification && record.endpoint_classification.split(', ').includes(endpointFilter))
 
-        return matchesSearch && matchesProvider && matchesCategory && matchesEndpoint
+        return matchesSearch && matchesCategory && matchesEndpoint
     })
 
     return (
@@ -166,14 +164,6 @@ export default function MasterlistPage() {
                             </div>
 
                             <div className="flex gap-2">
-                                <select
-                                    value={providerFilter}
-                                    onChange={(e) => setProviderFilter(e.target.value)}
-                                    className="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#dc3545] outline-none transition-all text-xs font-bold text-gray-700"
-                                >
-                                    <option value="all">All Providers</option>
-                                    {PROVIDERS.map(p => <option key={p} value={p}>{p}</option>)}
-                                </select>
 
                                 <select
                                     value={categoryFilter}
@@ -251,6 +241,8 @@ export default function MasterlistPage() {
                 </p>
                 <div className="flex justify-center gap-4">
                     <a href="/maintenance" className="text-[10px] text-[#dc3545] font-bold hover:underline">Maintenance Record</a>
+                    <span className="text-gray-200 text-[10px]">|</span>
+                    <a href="/incident" className="text-[10px] text-[#dc3545] font-bold hover:underline">Incident Report</a>
                     <span className="text-gray-200 text-[10px]">|</span>
                     <span className="text-[10px] text-gray-400 font-bold">Customer Masterlist</span>
                 </div>
