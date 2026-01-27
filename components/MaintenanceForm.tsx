@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import { MaintenanceRecord, MaintenanceRecordInput, ServerName, ClientName, MaintenanceReason, Approver, PerformedBy, Status } from '@/types/maintenance'
+import { MaintenanceRecord, MaintenanceRecordInput, ServerName, ClientName, MaintenanceReason, Approver, PerformedBy, Status, ProofOfMaintenance } from '@/types/maintenance'
 
 interface MaintenanceFormProps {
   record?: MaintenanceRecord | null
@@ -11,34 +11,15 @@ interface MaintenanceFormProps {
   onCancel: () => void
 }
 
-const SERVER_OPTIONS: ServerName[] = [
-  'All Servers', 'Multiple Servers', 'Other Server',
-  'sip00', 'sip01', 'sip02', 'sip03', 'sip04', 'sip05', 'sip07', 'sip08', 'sip09',
-  'sip10', 'sip11', 'sip15', 'sip17', 'sip19', 'sip20', 'sip21', 'sip22', 'sip26',
-  'sip27', 'sip28', 'sip29', 'sip30', 'sip32', 'sip33', 'sip35', 'sip37', 'sip45',
-  'sip46', 'sip50', 'sip52', 'sip54', 'sip55', 'sip56', 'sip58', 'sip59', 'sip60',
-  'sip61', 'sip64', 'sip65', 'sip66', 'sip67', 'sip70', 'sip103', 'sip104',
-  'sip205', 'sip206', 'sip207', 'sip208', 'sip209', 'sip210', 'sip212', 'sip213',
-  'sip214', 'sip215', 'sip216'
-]
-const CLIENT_OPTIONS: ClientName[] = [
-  'Asmara', 'At Sunrise', 'Best Home', 'Busy Bees SG', 'CBRE', 'Certis', 'Challenger',
-  'Chan Brothers', 'City State', 'DHL Malaysia', 'Dr Anywhere', 'Envac', 'Eversafe',
-  'Getgo', 'hisense', 'HSC Cancer', 'Interwell', 'iSetan', 'KFCPH', 'LHN Parking',
-  'Nippon Paint', 'NTUC Fairprice', 'Nuffield Dental', 'Origin', 'Other Client',
-  'pegasus', 'PLE', 'PMG Asia', 'Scania', 'Skool4Kidz', 'SMG Group/LSI', 'SMG IP',
-  'SMRT', 'Sysmex Malaysia', 'Touch Community', 'Vertex', 'Vistek', 'Webull',
-  'Wong Fong', 'Woosa'
-]
 const REASON_OPTIONS: MaintenanceReason[] = ['Asterisk Upgrade', 'DB Migration', 'Key Rotation', 'OS Patching', 'Other Reasons', 'Portal Upgrade', 'SSL Renewal', 'WAF Implementation']
-const APPROVER_OPTIONS: Approver[] = ['john', 'naveed', 'sayem']
-const PERFORMED_BY_OPTIONS: PerformedBy[] = ['aiman', 'hafiz', 'shahid']
+const APPROVER_OPTIONS: Approver[] = ['john']
+const PERFORMED_BY_OPTIONS: PerformedBy[] = ['aiman', 'hafiz', 'shahid', 'sayem', 'naveed', 'mostafijur', 'maaruf']
 const STATUS_OPTIONS: Status[] = ['completed', 'failed', 'on-hold', 'pending']
 
 export default function MaintenanceForm({ record, isCopy, onSuccess, onCancel }: MaintenanceFormProps) {
   const [formData, setFormData] = useState<MaintenanceRecordInput>({
-    server_name: 'Other Server',
-    client_name: 'Other Client',
+    server_name: '',
+    client_name: '',
     maintenance_date: '',
     start_time: '',
     end_time: '',
@@ -47,17 +28,16 @@ export default function MaintenanceForm({ record, isCopy, onSuccess, onCancel }:
     performed_by: 'aiman',
     status: 'pending',
     remark: '',
+    checklist: [],
   })
   const [submitting, setSubmitting] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>(record?.proof_of_maintenance || [])
-  const [serverSearch, setServerSearch] = useState('')
-  const [clientSearch, setClientSearch] = useState('')
-  const [showServerDropdown, setShowServerDropdown] = useState(false)
-  const [showClientDropdown, setShowClientDropdown] = useState(false)
+  const [uploadedFiles, setUploadedFiles] = useState<ProofOfMaintenance[]>(
+    record?.proof_of_maintenance
+      ? record.proof_of_maintenance.map(p => typeof p === 'string' ? { url: p } : p)
+      : []
+  )
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const serverDropdownRef = useRef<HTMLDivElement>(null)
-  const clientDropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (record) {
@@ -72,6 +52,7 @@ export default function MaintenanceForm({ record, isCopy, onSuccess, onCancel }:
         performed_by: record.performed_by || (record as any).perform_by || 'hafiz',
         status: record.status,
         remark: isCopy ? '' : (record.remark || ''),
+        checklist: record.checklist || [],
       })
 
       if (isCopy) {
@@ -80,7 +61,7 @@ export default function MaintenanceForm({ record, isCopy, onSuccess, onCancel }:
       }
 
       // Handle both array and legacy single string format, and JSONB string from Supabase
-      let proofFiles: string[] = []
+      let proofFiles: (string | ProofOfMaintenance)[] = []
       if (Array.isArray(record.proof_of_maintenance)) {
         proofFiles = record.proof_of_maintenance
       } else if (typeof record.proof_of_maintenance === 'string' && record.proof_of_maintenance) {
@@ -92,24 +73,14 @@ export default function MaintenanceForm({ record, isCopy, onSuccess, onCancel }:
           proofFiles = [record.proof_of_maintenance]
         }
       }
-      setUploadedFiles(proofFiles)
+
+      const normalizedProofs = proofFiles.map(p => typeof p === 'string' ? { url: p } : p)
+      setUploadedFiles(normalizedProofs)
     } else {
       setUploadedFiles([])
     }
   }, [record])
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (serverDropdownRef.current && !serverDropdownRef.current.contains(event.target as Node)) {
-        setShowServerDropdown(false)
-      }
-      if (clientDropdownRef.current && !clientDropdownRef.current.contains(event.target as Node)) {
-        setShowClientDropdown(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return
@@ -152,7 +123,8 @@ export default function MaintenanceForm({ record, isCopy, onSuccess, onCancel }:
       })
 
       const newUrls = await Promise.all(uploadPromises)
-      setUploadedFiles([...uploadedFiles, ...newUrls])
+      const newProofs = newUrls.map(url => ({ url }))
+      setUploadedFiles([...uploadedFiles, ...newProofs])
     } catch (error: any) {
       console.error('Error uploading files:', error)
       const errorMessage = error?.message || 'Failed to upload files'
@@ -168,6 +140,12 @@ export default function MaintenanceForm({ record, isCopy, onSuccess, onCancel }:
 
   const handleRemoveFile = (indexToRemove: number) => {
     setUploadedFiles(uploadedFiles.filter((_, index) => index !== indexToRemove))
+  }
+
+  const handleCommentChange = (index: number, comment: string) => {
+    const updated = [...uploadedFiles]
+    updated[index] = { ...updated[index], comment }
+    setUploadedFiles(updated)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -216,13 +194,6 @@ export default function MaintenanceForm({ record, isCopy, onSuccess, onCancel }:
     }
   }
 
-  const filteredServers = SERVER_OPTIONS.filter(server =>
-    server.toLowerCase().includes(serverSearch.toLowerCase())
-  )
-
-  const filteredClients = CLIENT_OPTIONS.filter(client =>
-    client.toLowerCase().includes(clientSearch.toLowerCase())
-  )
 
   const formatDateForInput = (dateString: string) => {
     if (!dateString) return ''
@@ -236,8 +207,8 @@ export default function MaintenanceForm({ record, isCopy, onSuccess, onCancel }:
 
   const formatDateForDisplay = (dateString: string) => {
     if (!dateString) return ''
-    // Convert YYYY-MM-DD to DD/MM/YYYY
     const date = new Date(dateString)
+    if (isNaN(date.getTime())) return dateString // Return original if not a valid date
     const day = String(date.getDate()).padStart(2, '0')
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const year = date.getFullYear()
@@ -257,86 +228,34 @@ export default function MaintenanceForm({ record, isCopy, onSuccess, onCancel }:
       </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="relative" ref={serverDropdownRef}>
+          <div>
             <label htmlFor="server_name" className="block text-sm font-medium text-gray-700 mb-1">
               Server Name <span className="text-red-500">*</span>
             </label>
-            <div className="relative">
-              <input
-                type="text"
-                id="server_name"
-                required
-                value={showServerDropdown ? serverSearch : formData.server_name}
-                onChange={(e) => {
-                  setServerSearch(e.target.value)
-                  setShowServerDropdown(true)
-                }}
-                onFocus={() => {
-                  setServerSearch('')
-                  setShowServerDropdown(true)
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#dc3545] focus:border-[#dc3545] outline-none transition-all"
-              />
-              {showServerDropdown && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
-                  {filteredServers.map((server) => (
-                    <button
-                      key={server}
-                      type="button"
-                      onClick={() => {
-                        setFormData({ ...formData, server_name: server })
-                        setShowServerDropdown(false)
-                        setServerSearch('')
-                      }}
-                      className="w-full text-left px-4 py-2 text-gray-900 hover:bg-gray-100 focus:bg-gray-100"
-                    >
-                      {server}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <input
+              type="text"
+              id="server_name"
+              required
+              placeholder="Enter server name"
+              value={formData.server_name}
+              onChange={(e) => setFormData({ ...formData, server_name: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#dc3545] focus:border-[#dc3545] outline-none transition-all"
+            />
           </div>
 
-          <div className="relative" ref={clientDropdownRef}>
+          <div>
             <label htmlFor="client_name" className="block text-sm font-medium text-gray-700 mb-1">
               Client Name <span className="text-red-500">*</span>
             </label>
-            <div className="relative">
-              <input
-                type="text"
-                id="client_name"
-                required
-                value={showClientDropdown ? clientSearch : formData.client_name}
-                onChange={(e) => {
-                  setClientSearch(e.target.value)
-                  setShowClientDropdown(true)
-                }}
-                onFocus={() => {
-                  setClientSearch('')
-                  setShowClientDropdown(true)
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#dc3545] focus:border-[#dc3545] outline-none transition-all"
-              />
-              {showClientDropdown && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
-                  {filteredClients.map((client) => (
-                    <button
-                      key={client}
-                      type="button"
-                      onClick={() => {
-                        setFormData({ ...formData, client_name: client })
-                        setShowClientDropdown(false)
-                        setClientSearch('')
-                      }}
-                      className="w-full text-left px-4 py-2 text-gray-900 hover:bg-gray-100 focus:bg-gray-100"
-                    >
-                      {client}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <input
+              type="text"
+              id="client_name"
+              required
+              placeholder="Enter client name"
+              value={formData.client_name}
+              onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#dc3545] focus:border-[#dc3545] outline-none transition-all"
+            />
           </div>
         </div>
 
@@ -509,26 +428,35 @@ export default function MaintenanceForm({ record, isCopy, onSuccess, onCancel }:
             <p className="mt-1 text-sm text-blue-600">Uploading...</p>
           )}
           {uploadedFiles.length > 0 && (
-            <div className="mt-3 space-y-2">
-              <p className="text-sm font-medium text-gray-700">Uploaded files:</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {uploadedFiles.map((url, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded border">
-                    <a
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline text-sm flex-1 truncate"
-                    >
-                      Proof {index + 1}
-                    </a>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveFile(index)}
-                      className="ml-2 text-red-600 hover:text-red-800 text-sm font-medium"
-                    >
-                      Remove
-                    </button>
+            <div className="mt-3 space-y-3">
+              <p className="text-sm font-medium text-gray-700">Uploaded files with descriptions:</p>
+              <div className="grid grid-cols-1 gap-3">
+                {uploadedFiles.map((proof, index) => (
+                  <div key={index} className="flex flex-col gap-2 p-3 bg-gray-50 rounded-xl border border-gray-100 shadow-sm transition-all hover:shadow-md">
+                    <div className="flex items-center justify-between">
+                      <a
+                        href={proof.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-700 text-sm font-semibold flex-1 truncate"
+                      >
+                        Proof {index + 1}
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFile(index)}
+                        className="ml-2 text-[10px] font-bold text-red-500 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-md transition-all uppercase tracking-tight"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Add a description (e.g. Before maintenance)"
+                      value={proof.comment || ''}
+                      onChange={(e) => handleCommentChange(index, e.target.value)}
+                      className="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-[#dc3545] focus:border-[#dc3545] outline-none transition-all"
+                    />
                   </div>
                 ))}
               </div>

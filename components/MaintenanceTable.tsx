@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { MaintenanceRecord, ChecklistItem } from '@/types/maintenance'
+import { MaintenanceRecord, ChecklistItem, ProofOfMaintenance } from '@/types/maintenance'
 import MaintenanceSummaryView from './MaintenanceSummaryView'
 
 interface MaintenanceTableProps {
@@ -16,8 +16,11 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
   const [selectedRemark, setSelectedRemark] = useState<string | null>(null)
   const [selectedChecklistRecord, setSelectedChecklistRecord] = useState<MaintenanceRecord | null>(null)
   const [selectedSummaryRecord, setSelectedSummaryRecord] = useState<MaintenanceRecord | null>(null)
-  const [localChecklists, setLocalChecklists] = useState<Record<string, { label: string, status: 'pass' | 'fail' | 'not-tested' }[]>>({})
+  const [activeProofList, setActiveProofList] = useState<ProofOfMaintenance[]>([])
+  const [activeProofIndex, setActiveProofIndex] = useState<number>(-1)
+  const [localChecklists, setLocalChecklists] = useState<Record<string, ChecklistItem[]>>({})
   const [tempChecklist, setTempChecklist] = useState<ChecklistItem[] | null>(null)
+  const [newItemLabel, setNewItemLabel] = useState('')
 
   const defaultChecklistItems = [
     "Able to make outgoing calls",
@@ -31,15 +34,25 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
   const handleStatusChange = (itemLabel: string, newStatus: 'pass' | 'fail' | 'not-tested') => {
     if (!tempChecklist) return
 
-    const updatedChecklist = defaultChecklistItems.map(label => {
-      const existingItem = tempChecklist.find(i => i.label === label)
-      if (label === itemLabel) {
-        return { label, status: newStatus }
+    const updatedChecklist = tempChecklist.map(item => {
+      if (item.label === itemLabel) {
+        return { ...item, status: newStatus }
       }
-      return existingItem || { label, status: 'not-tested' }
-    }) as ChecklistItem[]
+      return item
+    })
 
     setTempChecklist(updatedChecklist)
+  }
+
+  const handleAddCustomItem = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newItemLabel.trim() || !tempChecklist) return
+    if (tempChecklist.some(i => i.label.toLowerCase() === newItemLabel.trim().toLowerCase())) {
+      alert('This item already exists')
+      return
+    }
+    setTempChecklist([...tempChecklist, { label: newItemLabel.trim(), status: 'not-tested' }])
+    setNewItemLabel('')
   }
 
   const handleSaveChecklist = async () => {
@@ -62,18 +75,33 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
     setTempChecklist(null)
   }
 
-  // Handle ESC key to close modals
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setSelectedRemark(null)
         closeChecklist()
         setSelectedSummaryRecord(null)
+        setActiveProofIndex(-1)
       }
     }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (activeProofIndex === -1) return
+
+      if (e.key === 'ArrowRight' && activeProofIndex < activeProofList.length - 1) {
+        setActiveProofIndex(prev => prev + 1)
+      } else if (e.key === 'ArrowLeft' && activeProofIndex > 0) {
+        setActiveProofIndex(prev => prev - 1)
+      }
+    }
+
     window.addEventListener('keydown', handleEsc)
-    return () => window.removeEventListener('keydown', handleEsc)
-  }, [])
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleEsc)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [activeProofIndex, activeProofList.length])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -205,12 +233,14 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
                 </div>
               </td>
               <td className="px-4 py-4">
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Approved by</span>
-                  <span className="text-sm font-semibold text-slate-900 capitalize leading-none">{record.approver}</span>
-                  <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500 mt-1">
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight whitespace-nowrap">Approved by:</span>
+                    <span className="text-[11px] font-semibold text-slate-700 capitalize">{record.approver}</span>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Performed by:</span>
-                    <span className="truncate max-w-[120px]">{record.performed_by}</span>
+                    <span className="text-[11px] font-medium text-slate-600 leading-snug">{record.performed_by}</span>
                   </div>
                 </div>
               </td>
@@ -226,15 +256,15 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
               <td className="px-4 py-4">
                 <div className="flex items-center text-[11px] text-slate-500 font-medium">
                   {(() => {
-                    let proofs: string[] = []
+                    let proofs: ProofOfMaintenance[] = []
                     if (Array.isArray(record.proof_of_maintenance)) {
-                      proofs = record.proof_of_maintenance
+                      proofs = record.proof_of_maintenance.map(p => typeof p === 'string' ? { url: p } : p)
                     } else if (typeof record.proof_of_maintenance === 'string' && record.proof_of_maintenance) {
                       try {
                         const parsed = JSON.parse(record.proof_of_maintenance)
-                        proofs = Array.isArray(parsed) ? parsed : [record.proof_of_maintenance]
+                        proofs = (Array.isArray(parsed) ? parsed : [record.proof_of_maintenance]).map(p => typeof p === 'string' ? { url: p } : p)
                       } catch {
-                        proofs = [record.proof_of_maintenance]
+                        proofs = [{ url: record.proof_of_maintenance }]
                       }
                     }
 
@@ -243,12 +273,14 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
                         onClick={() => {
                           setSelectedChecklistRecord(record)
                           const initialChecklist = localChecklists[record.id] || record.checklist || []
-                          // Ensure all default items are present in temp state
-                          const fullChecklist = defaultChecklistItems.map(label => {
-                            const existing = initialChecklist.find(i => i.label === label)
-                            return existing || { label, status: 'not-tested' }
-                          }) as ChecklistItem[]
-                          setTempChecklist(fullChecklist)
+                          // Ensure all default items are present
+                          const baseChecklist = defaultChecklistItems.map(label => {
+                            const existing = initialChecklist.find((i: ChecklistItem) => i.label === label)
+                            return existing || { label, status: 'not-tested' as const }
+                          })
+                          // Add any custom items that were previously saved
+                          const customItems = initialChecklist.filter((i: ChecklistItem) => !defaultChecklistItems.includes(i.label))
+                          setTempChecklist([...baseChecklist, ...customItems])
                         }}
                         className="text-[10px] font-bold text-indigo-600 bg-indigo-50/50 hover:bg-indigo-100/80 px-2 py-0.5 rounded transition-colors uppercase tracking-tight flex items-center gap-1 w-fit mt-1"
                       >
@@ -268,16 +300,18 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
                     return (
                       <div className="flex flex-col gap-1">
                         <div className="flex gap-1">
-                          {proofs.map((url, index) => (
-                            <a
+                          {proofs.map((proof, index) => (
+                            <button
                               key={index}
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                              onClick={() => {
+                                setActiveProofList(proofs)
+                                setActiveProofIndex(index)
+                              }}
                               className="w-4 h-4 flex items-center justify-center bg-slate-100 text-slate-500 rounded text-[9px] font-bold hover:bg-[#dc3545] hover:text-white transition-all shadow-sm"
+                              title={proof.comment || `Proof ${index + 1}`}
                             >
                               {index + 1}
-                            </a>
+                            </button>
                           ))}
                         </div>
                         {checklistButton}
@@ -366,35 +400,53 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
                   </button>
                 </div>
 
-                <div className="space-y-3">
-                  {defaultChecklistItems.map((item, index) => {
-                    const recordItem = tempChecklist?.find(i => i.label === item);
-                    const status = recordItem?.status || 'not-tested';
-
-                    return (
-                      <div key={index} className="flex items-center justify-between p-3 rounded-xl border border-slate-50 bg-slate-50/30 hover:bg-slate-50 transition-colors group">
-                        <span className="text-sm font-medium text-slate-700">{item}</span>
-                        <div className="flex gap-1">
-                          {(['pass', 'fail', 'not-tested'] as const).map((s) => (
-                            <button
-                              key={s}
-                              onClick={() => handleStatusChange(item, s)}
-                              className={`px-2 py-1 text-[10px] font-bold rounded-md uppercase tracking-tighter transition-all ${status === s
-                                ? s === 'pass'
-                                  ? 'bg-green-500 text-white shadow-sm'
-                                  : s === 'fail'
-                                    ? 'bg-red-500 text-white shadow-sm'
-                                    : 'bg-slate-500 text-white shadow-sm'
-                                : 'bg-white text-slate-400 border border-slate-200 hover:border-slate-300'
-                                }`}
-                            >
-                              {s === 'not-tested' ? 'N/A' : s}
-                            </button>
-                          ))}
-                        </div>
+                <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-1 custom-scrollbar">
+                  {tempChecklist?.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 rounded-xl border border-slate-50 bg-slate-50/30 hover:bg-slate-50 transition-colors group">
+                      <span className="text-sm font-medium text-slate-700">{item.label}</span>
+                      <div className="flex gap-1">
+                        {(['pass', 'fail', 'not-tested'] as const).map((s) => (
+                          <button
+                            key={s}
+                            onClick={() => handleStatusChange(item.label, s)}
+                            className={`px-2 py-1 text-[10px] font-bold rounded-md uppercase tracking-tighter transition-all ${item.status === s
+                              ? s === 'pass'
+                                ? 'bg-green-500 text-white shadow-sm'
+                                : s === 'fail'
+                                  ? 'bg-red-500 text-white shadow-sm'
+                                  : 'bg-slate-500 text-white shadow-sm'
+                              : 'bg-white text-slate-400 border border-slate-200 hover:border-slate-300'
+                              }`}
+                          >
+                            {s === 'not-tested' ? 'N/A' : s}
+                          </button>
+                        ))}
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
+                  {(!tempChecklist || tempChecklist.length === 0) && (
+                    <p className="text-center text-slate-400 text-sm py-4">No checklist items.</p>
+                  )}
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-slate-100">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Add Custom Item</h4>
+                  <form onSubmit={handleAddCustomItem} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newItemLabel}
+                      onChange={(e) => setNewItemLabel(e.target.value)}
+                      placeholder="e.g. Server patched successfully"
+                      className="flex-1 px-4 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#dc3545] focus:border-[#dc3545] outline-none transition-all"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!newItemLabel.trim()}
+                      className="px-4 py-2 bg-indigo-50 text-indigo-600 text-sm font-bold rounded-xl hover:bg-indigo-100 transition-colors disabled:opacity-50"
+                    >
+                      Add
+                    </button>
+                  </form>
                 </div>
               </div>
               <div className="bg-slate-50 px-6 py-4 flex justify-end">
@@ -410,6 +462,110 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
           </div>
         </div>
       )}
+      {/* Proof Viewer Modal */}
+      {activeProofIndex !== -1 && activeProofList[activeProofIndex] && (
+        <div className="fixed inset-0 z-[60] overflow-hidden flex items-center justify-center p-4 sm:p-6">
+          <div
+            className="fixed inset-0 bg-slate-900/95 backdrop-blur-md transition-opacity"
+            onClick={() => setActiveProofIndex(-1)}
+          ></div>
+
+          <div className="relative bg-white rounded-3xl shadow-2xl max-w-5xl w-full flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 ring-1 ring-white/20">
+            {/* Header */}
+            <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-[10px] font-black text-[#dc3545] bg-[#dc3545]/5 px-2 py-0.5 rounded tracking-[0.2em] uppercase">Proof {activeProofIndex + 1}/{activeProofList.length}</span>
+                </div>
+                {activeProofList[activeProofIndex].comment ? (
+                  <p className="text-lg font-bold text-slate-900 leading-tight">{activeProofList[activeProofIndex].comment}</p>
+                ) : (
+                  <p className="text-lg font-bold text-slate-400 italic">No description</p>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <a
+                  href={activeProofList[activeProofIndex].url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2.5 text-slate-400 hover:text-[#dc3545] hover:bg-slate-50 rounded-2xl transition-all group"
+                  title="Open full resolution"
+                >
+                  <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+                <button
+                  onClick={() => setActiveProofIndex(-1)}
+                  className="p-2.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-2xl transition-all group"
+                >
+                  <svg className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Main Stage */}
+            <div className="relative flex-1 bg-slate-50 flex items-center justify-center p-4 min-h-[400px] group/stage">
+              {/* Previous Button */}
+              <button
+                onClick={(e) => { e.stopPropagation(); setActiveProofIndex(prev => Math.max(0, prev - 1)); }}
+                disabled={activeProofIndex === 0}
+                className={`absolute left-4 z-20 p-4 rounded-full bg-white/90 shadow-xl border border-slate-200 text-slate-400 hover:text-[#dc3545] hover:scale-110 active:scale-95 transition-all disabled:opacity-0 disabled:pointer-events-none md:flex hidden`}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+
+              {/* Next Button */}
+              <button
+                onClick={(e) => { e.stopPropagation(); setActiveProofIndex(prev => Math.min(activeProofList.length - 1, prev + 1)); }}
+                disabled={activeProofIndex === activeProofList.length - 1}
+                className={`absolute right-4 z-20 p-4 rounded-full bg-white/90 shadow-xl border border-slate-200 text-slate-400 hover:text-[#dc3545] hover:scale-110 active:scale-95 transition-all disabled:opacity-0 disabled:pointer-events-none md:flex hidden`}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+
+              <div className="w-full h-full flex items-center justify-center">
+                <img
+                  src={activeProofList[activeProofIndex].url}
+                  alt={activeProofList[activeProofIndex].comment || "Proof"}
+                  className="max-w-full max-h-[75vh] object-contain rounded-xl shadow-2xl animate-in fade-in zoom-in-95 duration-300"
+                />
+              </div>
+            </div>
+
+            {/* Mobile Navigation Bar */}
+            <div className="md:hidden flex items-center justify-between px-6 py-4 bg-white border-t border-slate-100">
+              <button
+                onClick={() => setActiveProofIndex(prev => Math.max(0, prev - 1))}
+                disabled={activeProofIndex === 0}
+                className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-[#dc3545] disabled:text-slate-300"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" />
+                </svg>
+                Prev
+              </button>
+              <button
+                onClick={() => setActiveProofIndex(prev => Math.min(activeProofList.length - 1, prev + 1))}
+                disabled={activeProofIndex === activeProofList.length - 1}
+                className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-[#dc3545] disabled:text-slate-300"
+              >
+                Next
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Remark Modal */}
       {selectedRemark !== null && (
         <div className="fixed inset-0 z-50 overflow-y-auto">

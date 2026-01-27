@@ -68,7 +68,8 @@ export default function MaintenancePage() {
       // Also delete the proof files if they exist
       const record = records.find(r => r.id === id)
       if (record?.proof_of_maintenance && record.proof_of_maintenance.length > 0) {
-        const fileNames = record.proof_of_maintenance.map(url => {
+        const fileNames = record.proof_of_maintenance.map(p => {
+          const url = typeof p === 'string' ? p : p.url
           const urlParts = url.split('/')
           return urlParts[urlParts.length - 1]?.split('?')[0]
         }).filter(Boolean) as string[]
