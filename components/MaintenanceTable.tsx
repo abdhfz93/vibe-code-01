@@ -20,11 +20,11 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
   const [tempChecklist, setTempChecklist] = useState<ChecklistItem[] | null>(null)
 
   const defaultChecklistItems = [
-    "Able to make outbound calls",
-    "Ticket created for outbound calls",
+    "Able to make outgoing calls",
+    "Ticket created for outgoing calls",
     "Able to receive incoming calls",
     "Ticket created for incoming calls",
-    "Call can be automatically rated",
+    "Calls are auto-rated",
     "Able to transcribe the calls"
   ]
 
