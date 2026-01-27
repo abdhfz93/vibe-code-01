@@ -24,11 +24,7 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
 
   const defaultChecklistItems = [
     "Able to make outgoing calls",
-    "Ticket created for outgoing calls",
-    "Able to receive incoming calls",
-    "Ticket created for incoming calls",
-    "Calls are auto-rated",
-    "Able to transcribe the calls"
+    "Able to receive incoming calls"
   ]
 
   const handleStatusChange = (itemLabel: string, newStatus: 'pass' | 'fail' | 'not-tested') => {
@@ -53,6 +49,15 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
     }
     setTempChecklist([...tempChecklist, { label: newItemLabel.trim(), status: 'not-tested' }])
     setNewItemLabel('')
+  }
+
+  const handleDeleteChecklistItem = (label: string) => {
+    if (!tempChecklist) return
+    if (defaultChecklistItems.includes(label)) {
+      alert("You cannot delete default checklist items")
+      return
+    }
+    setTempChecklist(tempChecklist.filter(item => item.label !== label))
   }
 
   const handleSaveChecklist = async () => {
@@ -402,25 +407,44 @@ export default function MaintenanceTable({ records, onEdit, onCopy, onDelete, on
 
                 <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-1 custom-scrollbar">
                   {tempChecklist?.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 rounded-xl border border-slate-50 bg-slate-50/30 hover:bg-slate-50 transition-colors group">
-                      <span className="text-sm font-medium text-slate-700">{item.label}</span>
-                      <div className="flex gap-1">
-                        {(['pass', 'fail', 'not-tested'] as const).map((s) => (
-                          <button
-                            key={s}
-                            onClick={() => handleStatusChange(item.label, s)}
-                            className={`px-2 py-1 text-[10px] font-bold rounded-md uppercase tracking-tighter transition-all ${item.status === s
-                              ? s === 'pass'
-                                ? 'bg-green-500 text-white shadow-sm'
-                                : s === 'fail'
-                                  ? 'bg-red-500 text-white shadow-sm'
-                                  : 'bg-slate-500 text-white shadow-sm'
-                              : 'bg-white text-slate-400 border border-slate-200 hover:border-slate-300'
-                              }`}
-                          >
-                            {s === 'not-tested' ? 'N/A' : s}
-                          </button>
-                        ))}
+                    <div key={index} className="flex items-center justify-between p-3 rounded-xl border border-slate-50 bg-slate-50/30 hover:bg-slate-50 transition-colors group relative">
+                      <div className="flex flex-col flex-1 pr-2">
+                        <span className="text-sm font-medium text-slate-700">{item.label}</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="flex gap-1 min-w-[120px] justify-center">
+                          {(['pass', 'fail', 'not-tested'] as const).map((s) => (
+                            <button
+                              key={s}
+                              onClick={() => handleStatusChange(item.label, s)}
+                              className={`px-2 py-1 text-[10px] font-bold rounded-md uppercase tracking-tighter transition-all flex-1 min-w-[32px] ${item.status === s
+                                ? s === 'pass'
+                                  ? 'bg-green-500 text-white shadow-sm'
+                                  : s === 'fail'
+                                    ? 'bg-red-500 text-white shadow-sm'
+                                    : 'bg-slate-500 text-white shadow-sm'
+                                : 'bg-white text-slate-400 border border-slate-200 hover:border-slate-300'
+                                }`}
+                            >
+                              {s === 'not-tested' ? 'N/A' : s}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="w-8 flex justify-center">
+                          {!defaultChecklistItems.includes(item.label) ? (
+                            <button
+                              onClick={() => handleDeleteChecklistItem(item.label)}
+                              className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                              title="Delete Item"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          ) : (
+                            <div className="w-8 h-8" /> // Invisible placeholder
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
