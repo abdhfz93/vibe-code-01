@@ -21,6 +21,27 @@ export async function signup(formData: FormData) {
 
     const origin = headers().get('origin')
 
+    // 1. Check if username or email already exists in profiles
+    const { data: existingProfile, error: checkError } = await supabase
+        .from('profiles')
+        .select('username, email')
+        .or(`username.eq.${username},email.eq.${email}`)
+        .maybeSingle()
+
+    if (checkError) {
+        return { error: 'An error occurred while checking availability' }
+    }
+
+    if (existingProfile) {
+        if (existingProfile.username === username) {
+            return { error: 'Username is already taken' }
+        }
+        if (existingProfile.email === email) {
+            return { error: 'Email is already registered' }
+        }
+    }
+
+    // 2. Proceed with signup
     const { error } = await supabase.auth.signUp({
         email,
         password,
