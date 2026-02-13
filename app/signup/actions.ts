@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 
 export async function signup(formData: FormData) {
     const supabase = createClient()
@@ -18,6 +19,8 @@ export async function signup(formData: FormData) {
         return { error: 'Password must be at least 8 characters' }
     }
 
+    const origin = headers().get('origin')
+
     const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -25,6 +28,7 @@ export async function signup(formData: FormData) {
             data: {
                 username,
             },
+            emailRedirectTo: `${origin}/auth/confirm`,
         },
     })
 
@@ -32,5 +36,5 @@ export async function signup(formData: FormData) {
         return { error: error.message }
     }
 
-    redirect('/')
+    return { success: true, message: 'Signup successful! Please check your email to confirm your account.' }
 }
