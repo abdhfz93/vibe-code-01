@@ -53,11 +53,8 @@ export default function SignupPage() {
                         <>
                             <div className="text-center mb-10">
                                 <h1 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">
-                                    Create <span className="text-[#dc3545]">Account</span>
+                                    Create Account
                                 </h1>
-                                <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">
-                                    Join Nautilus Central
-                                </p>
                             </div>
 
                             <form onSubmit={handleSubmit} className="space-y-6 text-left">
