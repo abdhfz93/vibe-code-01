@@ -6,12 +6,25 @@ export default async function Home() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  let username = user?.email
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.username) {
+      username = profile.username
+    }
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative">
       {user && (
         <div className="absolute top-6 right-6 flex items-center gap-4">
-          <div className="text-right hidden sm:block">
-            <p className="text-sm font-bold text-gray-900">{user.user_metadata?.username || user.email}</p>
+          <div className="text-right">
+            <p className="text-sm font-bold text-gray-900">{username}</p>
             <p className="text-xs text-gray-500 capitalize">{user.role || 'User'}</p>
           </div>
           <form action={signout}>

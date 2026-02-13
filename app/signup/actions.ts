@@ -54,6 +54,9 @@ export async function signup(formData: FormData) {
     })
 
     if (error) {
+        if (error.message.includes('rate limit')) {
+            return { error: 'Registration limit reached for now. Please try again in an hour or contact support.' }
+        }
         return { error: error.message }
     }
 
