@@ -1,8 +1,30 @@
 import Link from 'next/link'
+import { createClient } from '@/utils/supabase/server'
+import { signout } from './login/actions'
 
-export default function Home() {
+export default async function Home() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   return (
-    <main className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+    <main className="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative">
+      {user && (
+        <div className="absolute top-6 right-6 flex items-center gap-4">
+          <div className="text-right hidden sm:block">
+            <p className="text-sm font-bold text-gray-900">{user.user_metadata?.username || user.email}</p>
+            <p className="text-xs text-gray-500 capitalize">{user.role || 'User'}</p>
+          </div>
+          <form action={signout}>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-gray-600 hover:text-red-600 hover:border-red-100 hover:bg-red-50 transition-all shadow-sm"
+            >
+              Sign Out
+            </button>
+          </form>
+        </div>
+      )}
+
       <div className="bg-white p-8 sm:p-12 rounded-3xl shadow-xl shadow-slate-200 border border-gray-100 max-w-2xl w-full text-center">
         <h1 className="text-3xl sm:text-4xl font-black text-gray-900 mb-2 tracking-tight">
           <span className="text-[#dc3545]">Nautilus</span> Central
