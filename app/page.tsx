@@ -46,7 +46,7 @@ export default async function Home() {
           Internal Management Systems
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
           <Link
             href="/masterlist"
             className="group p-6 bg-white border-2 border-slate-100 rounded-2xl hover:border-[#dc3545] transition-all hover:shadow-lg hover:shadow-[#dc3545]/5 text-left"
@@ -85,7 +85,22 @@ export default async function Home() {
             <h2 className="text-lg font-bold text-gray-900 mt-2">Maintenance Record</h2>
             <p className="text-sm text-gray-500 mt-1">Submit and track Nautilus server maintenance records.</p>
           </Link>
+
+          <Link
+            href="/notes"
+            className="group p-6 bg-white border-2 border-slate-100 rounded-2xl hover:border-[#dc3545] transition-all hover:shadow-lg hover:shadow-[#dc3545]/5 text-left"
+          >
+            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-[#dc3545]/10 group-hover:text-[#dc3545] text-slate-400 transition-colors">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </div>
+            <h2 className="text-lg font-bold text-gray-900 mt-2">Personal Note</h2>
+            <p className="text-sm text-gray-500 mt-1">Securely save and encrypt your private notes.</p>
+          </Link>
         </div>
+
+
 
         <footer className="mt-12 text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">
           &copy; {new Date().getFullYear()} Nautilus SIP Pte Ltd.
