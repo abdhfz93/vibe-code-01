@@ -306,7 +306,7 @@ export default function MaintenancePage() {
 
       <footer className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-100 py-4 text-center z-40">
         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mb-1">
-          &copy; {new Date().getFullYear()} Nautilus SIP Pte Ltd.
+          &copy; {new Date().getFullYear().toString()} Nautilus SIP Pte Ltd.
         </p>
         <div className="flex justify-center gap-4">
           <a href="/masterlist" className="text-[10px] text-[#dc3545] font-bold hover:underline">Customer Masterlist</a>
@@ -314,6 +314,8 @@ export default function MaintenancePage() {
           <a href="/incident" className="text-[10px] text-[#dc3545] font-bold hover:underline">Incident Report</a>
           <span className="text-gray-200 text-[10px]">|</span>
           <span className="text-[10px] text-gray-400 font-bold">Maintenance Record</span>
+          <span className="text-gray-200 text-[10px]">|</span>
+          <a href="/notes" className="text-[10px] text-[#dc3545] font-bold hover:underline">Personal Note</a>
         </div>
       </footer>
     </div>

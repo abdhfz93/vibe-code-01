@@ -34,7 +34,7 @@ export default function SignupPage() {
                         <div className="py-6">
                             <div className="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-8 animate-pulse text-2xl">
                                 <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v10a2 2 0 002 2z" />
                                 </svg>
                             </div>
                             <h1 className="text-2xl font-black text-gray-900 mb-4 tracking-tight">Check your email</h1>
@@ -72,7 +72,7 @@ export default function SignupPage() {
                                     />
                                 </div>
 
-                                <div>
+                                <div className="group">
                                     <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 ml-1">
                                         Email Address
                                     </label>
@@ -86,7 +86,7 @@ export default function SignupPage() {
                                     />
                                 </div>
 
-                                <div>
+                                <div className="group">
                                     <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 ml-1">
                                         Password
                                     </label>

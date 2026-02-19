@@ -125,14 +125,8 @@ export default function NotesPage() {
                 <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden relative">
                     <div className="p-8 border-b border-slate-100 bg-slate-50/30 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-[#dc3545] border border-slate-100">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                            </div>
                             <div>
-                                <h2 className="text-xl font-bold text-slate-800 tracking-tight">Personal Vault</h2>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">End-to-End Secure Notepad</p>
+                                <h2 className="text-xl font-bold text-slate-800 tracking-tight">Personal Note</h2>
                             </div>
                         </div>
 
@@ -166,8 +160,8 @@ export default function NotesPage() {
                             </div>
                             <div className="w-px h-6 bg-slate-200"></div>
                             <div className="flex flex-col">
-                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Encryption</span>
-                                <span className="text-sm font-bold text-emerald-600">Verified Active</span>
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Line Count</span>
+                                <span className="text-sm font-bold text-slate-700">{note?.split('\n').length || 0}</span>
                             </div>
                         </div>
 
@@ -175,7 +169,7 @@ export default function NotesPage() {
                             <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
-                            <span className="text-[9px] font-bold uppercase tracking-tight leading-tight">Data is synced to your account only. Nautilus staff cannot access this vault.</span>
+                            <span className="text-[9px] font-bold uppercase tracking-tight leading-tight">Data is synced to your account only. <br /> Other Nautilus staff cannot access this note.</span>
                         </div>
                     </div>
                 </div>

@@ -510,6 +510,8 @@ export default function IncidentPage() {
                     <span className="text-[10px] text-gray-400 font-bold">Incident Report</span>
                     <span className="text-gray-200 text-[10px]">|</span>
                     <a href="/maintenance" className="text-[10px] text-[#dc3545] font-bold hover:underline">Maintenance Record</a>
+                    <span className="text-gray-200 text-[10px]">|</span>
+                    <a href="/notes" className="text-[10px] text-[#dc3545] font-bold hover:underline">Personal Note</a>
                 </div>
             </footer>
 
