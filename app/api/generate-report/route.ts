@@ -1,14 +1,60 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/utils/supabase/server";
+
+type GenerateReportPayload = {
+    context: string;
+    sip_id: string;
+    client_name: string;
+    incident_date: string;
+};
+
+function parsePayload(value: unknown): GenerateReportPayload | null {
+    if (!value || typeof value !== "object") return null;
+    const obj = value as Record<string, unknown>;
+
+    const context = typeof obj.context === "string" ? obj.context.trim() : "";
+    const sip_id = typeof obj.sip_id === "string" ? obj.sip_id.trim() : "";
+    const client_name = typeof obj.client_name === "string" ? obj.client_name.trim() : "";
+    const incident_date = typeof obj.incident_date === "string" ? obj.incident_date.trim() : "";
+
+    if (!context || context.length > 12000) return null;
+    if (sip_id.length > 100 || client_name.length > 200) return null;
+    if (incident_date && !/^\d{4}-\d{2}-\d{2}$/.test(incident_date)) return null;
+    if (incident_date && Number.isNaN(Date.parse(`${incident_date}T00:00:00Z`))) return null;
+
+    return {
+        context,
+        sip_id,
+        client_name,
+        incident_date
+    };
+}
 
 export async function POST(req: Request) {
     try {
-        const { context, sip_id, client_name, incident_date } = await req.json();
-
-        if (!context) {
-            return NextResponse.json({ error: "Context is required" }, { status: 400 });
+        const supabaseServer = createClient();
+        const { data: { user }, error: authError } = await supabaseServer.auth.getUser();
+        if (authError || !user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
+
+        let requestBody: unknown;
+        try {
+            requestBody = await req.json();
+        } catch {
+            return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
+        }
+
+        const payload = parsePayload(requestBody);
+        if (!payload) {
+            return NextResponse.json(
+                { error: "Invalid request payload" },
+                { status: 400 }
+            );
+        }
+
+        const { context, sip_id, client_name, incident_date } = payload;
 
         const apiKey = process.env.GOOGLE_AI_API_KEY;
         if (!apiKey) {
@@ -83,12 +129,12 @@ ${context}
             const month = d.toLocaleString('en-GB', { month: 'short' });
             const year = d.getFullYear();
             formattedDate = `${day} ${month} ${year}`;
-        } catch (e) { }
+        } catch { }
 
         const title = `Incident Report for ${client_name || 'N/A'} (${sip_id || 'N/A'}) - ${formattedDate}`;
 
         // Save to Supabase
-        const { data: savedRecord, error: dbError } = await supabase
+        const { data: savedRecord, error: dbError } = await supabaseServer
             .from('incident_reports')
             .insert([{
                 title,
@@ -101,13 +147,10 @@ ${context}
             .single();
 
         if (dbError) {
-            console.error("DB Error Details:", dbError);
+            console.error("DB Error while saving incident report:", dbError);
             return NextResponse.json({
                 report: text,
-                record: null,
-                dbError: dbError.message,
-                dbDetail: dbError.details,
-                dbHint: dbError.hint
+                record: null
             });
         }
 
@@ -115,8 +158,8 @@ ${context}
             report: text,
             record: savedRecord
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error("API Error:", error);
-        return NextResponse.json({ error: error.message || "Failed to generate report" }, { status: 500 });
+        return NextResponse.json({ error: "Failed to generate report" }, { status: 500 });
     }
 }
