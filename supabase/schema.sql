@@ -61,9 +61,10 @@ CREATE INDEX IF NOT EXISTS idx_status ON maintenance_records(status);
 -- Enable Row Level Security (optional, but good practice)
 ALTER TABLE maintenance_records ENABLE ROW LEVEL SECURITY;
 
--- Create a policy that allows all operations (since we're not using auth yet)
-CREATE POLICY "Allow all operations" ON maintenance_records
+-- Restrict to authenticated users only
+CREATE POLICY "Authenticated users can view/manage records" ON maintenance_records
   FOR ALL
+  TO authenticated
   USING (true)
   WITH CHECK (true);
 

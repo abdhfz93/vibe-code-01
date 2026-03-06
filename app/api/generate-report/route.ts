@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 
 type GenerateReportPayload = {
     context: string;
+    meeting_notes?: string;
     sip_id: string;
     client_name: string;
     incident_date: string;
@@ -14,6 +15,7 @@ function parsePayload(value: unknown): GenerateReportPayload | null {
     const obj = value as Record<string, unknown>;
 
     const context = typeof obj.context === "string" ? obj.context.trim() : "";
+    const meeting_notes = typeof obj.meeting_notes === "string" ? obj.meeting_notes.trim() : "";
     const sip_id = typeof obj.sip_id === "string" ? obj.sip_id.trim() : "";
     const client_name = typeof obj.client_name === "string" ? obj.client_name.trim() : "";
     const incident_date = typeof obj.incident_date === "string" ? obj.incident_date.trim() : "";
@@ -25,6 +27,7 @@ function parsePayload(value: unknown): GenerateReportPayload | null {
 
     return {
         context,
+        meeting_notes,
         sip_id,
         client_name,
         incident_date
@@ -54,7 +57,7 @@ export async function POST(req: Request) {
             );
         }
 
-        const { context, sip_id, client_name, incident_date } = payload;
+        const { context, meeting_notes, sip_id, client_name, incident_date } = payload;
 
         const apiKey = process.env.GOOGLE_AI_API_KEY;
         if (!apiKey) {
@@ -70,7 +73,7 @@ export async function POST(req: Request) {
         });
 
         const prompt = `
-You are an expert technical support engineer. Your task is to analyze the following WhatsApp conversation context and generate a professional incident report.
+You are an expert technical support engineer. Your task is to analyze the following WhatsApp conversation context${meeting_notes ? " and supplementary meeting notes" : ""} and generate a professional incident report.
 
 ### STEP 1: VALIDATION
 First, check if the provided "Conversation Context" actually contains a technical support conversation, error logs, or relevant details about a technical issue.
@@ -107,6 +110,9 @@ Rules:
 
 Conversation Context:
 ${context}
+
+${meeting_notes ? `Supplementary Meeting Notes:
+${meeting_notes}` : ""}
 `;
 
         const result = await model.generateContent(prompt);

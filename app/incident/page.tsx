@@ -7,6 +7,7 @@ import { IncidentReport } from '@/types/incident'
 
 export default function IncidentPage() {
     const [context, setContext] = useState('')
+    const [meetingNotes, setMeetingNotes] = useState('')
     const [report, setReport] = useState('')
     const [displayedTitle, setDisplayedTitle] = useState('')
     const [loading, setLoading] = useState(false)
@@ -34,6 +35,12 @@ export default function IncidentPage() {
         incident_date: ''
     })
     const [isUpdating, setIsUpdating] = useState(false)
+    const [selectedChecklistRecord, setSelectedChecklistRecord] = useState<IncidentReport | null>(null)
+    const [tempChecklist, setTempChecklist] = useState<{ label: string; status: 'pass' | 'fail' | 'not-tested'; link?: string }[] | null>(null)
+    const [newItemLabel, setNewItemLabel] = useState('')
+    const [newItemLink, setNewItemLink] = useState('')
+
+    const defaultChecklistItems = ['Asana', 'Google Drive', 'Zendesk']
 
     // Handle ESC key to clear or close modal (if any)
     useEffect(() => {
@@ -81,6 +88,7 @@ export default function IncidentPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     context,
+                    meeting_notes: meetingNotes,
                     sip_id: sipId,
                     client_name: clientName,
                     incident_date: incidentDate
@@ -213,6 +221,62 @@ export default function IncidentPage() {
         }
     }
 
+    const handleUpdateFollowUp = async (recordId: number, followUp: any[]) => {
+        try {
+            const { error } = await supabase
+                .from('incident_reports')
+                .update({
+                    follow_up: followUp,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', recordId)
+
+            if (error) throw error
+
+            setPastIncidents(prev => prev.map(r =>
+                r.id === recordId ? { ...r, follow_up: followUp } : r
+            ))
+        } catch (error) {
+            console.error('Error updating follow-up:', error)
+            alert('Failed to update follow-up checklist')
+        }
+    }
+
+    const handleFollowUpStatusChange = (label: string, newStatus: 'pass' | 'fail' | 'not-tested') => {
+        if (!tempChecklist) return
+        setTempChecklist(tempChecklist.map(item =>
+            item.label === label ? { ...item, status: newStatus } : item
+        ))
+    }
+
+    const handleFollowUpLinkChange = (label: string, newLink: string) => {
+        if (!tempChecklist) return
+        setTempChecklist(tempChecklist.map(item =>
+            item.label === label ? { ...item, link: newLink } : item
+        ))
+    }
+
+    const handleAddCustomFollowUp = (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!newItemLabel.trim() || !tempChecklist) return
+        setTempChecklist([...tempChecklist, { label: newItemLabel.trim(), status: 'not-tested', link: newItemLink.trim() }])
+        setNewItemLabel('')
+        setNewItemLink('')
+    }
+
+    const handleDeleteFollowUpItem = (label: string) => {
+        if (!tempChecklist) return
+        if (defaultChecklistItems.includes(label)) return
+        setTempChecklist(tempChecklist.filter(item => item.label !== label))
+    }
+
+    const handleSaveFollowUp = async () => {
+        if (!selectedChecklistRecord || !tempChecklist) return
+        await handleUpdateFollowUp(selectedChecklistRecord.id, tempChecklist)
+        setSelectedChecklistRecord(null)
+        setTempChecklist(null)
+    }
+
     const filteredIncidents = pastIncidents.filter(inc => {
         const searchStr = searchTerm.toLowerCase().trim()
         if (!searchStr) return true
@@ -313,22 +377,31 @@ export default function IncidentPage() {
                                 </div>
                             </div>
 
-                            <div className="mb-8">
-                                <div className="flex items-center justify-between mb-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Source Context</label>
-                                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 rounded-lg text-amber-600 border border-amber-100/50">
-                                        <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                        </svg>
-                                        <span className="text-[10px] font-bold uppercase tracking-tight">Please be aware: Do not paste sensitive data like API keys, etc. into this box.</span>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 items-start">
+                                <div className="flex flex-col h-full">
+                                    <div className="flex flex-col mb-2 h-10 justify-center">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Source Context:</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-700 ml-1">WhatsApp Conversation (Mandatory)</label>
                                     </div>
+                                    <textarea
+                                        value={context}
+                                        onChange={(e) => setContext(e.target.value)}
+                                        placeholder="Paste WhatsApp conversation here..."
+                                        className="w-full h-48 p-6 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#dc3545] outline-none transition-all text-sm font-mono leading-relaxed resize-none"
+                                    />
                                 </div>
-                                <textarea
-                                    value={context}
-                                    onChange={(e) => setContext(e.target.value)}
-                                    placeholder="Paste WhatsApp conversation here..."
-                                    className="w-full h-48 p-6 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#dc3545] outline-none transition-all text-sm font-mono leading-relaxed resize-none"
-                                />
+
+                                <div className="flex flex-col h-full">
+                                    <div className="flex flex-col mb-2 h-10 justify-end pb-0.5">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-700 ml-1">Meeting Notes (Optional)</label>
+                                    </div>
+                                    <textarea
+                                        value={meetingNotes}
+                                        onChange={(e) => setMeetingNotes(e.target.value)}
+                                        placeholder="Place Meeting Notes summary here..."
+                                        className="w-full h-48 p-6 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#dc3545] outline-none transition-all text-sm font-mono leading-relaxed resize-none"
+                                    />
+                                </div>
                             </div>
 
                             <div className="flex justify-center">
@@ -423,6 +496,9 @@ export default function IncidentPage() {
                                     <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                                         Incident Title
                                     </th>
+                                    <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                        Follow-up
+                                    </th>
                                     <th className="px-6 py-4 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                                         Actions
                                     </th>
@@ -458,6 +534,26 @@ export default function IncidentPage() {
                                                         {formatIncidentTitle(inc.sip_id, inc.client_name, inc.incident_date)}
                                                     </span>
                                                 </div>
+                                            </td>
+                                            <td className="px-6 py-5">
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedChecklistRecord(inc)
+                                                        const initialChecklist = inc.follow_up || []
+                                                        const baseChecklist = defaultChecklistItems.map(label => {
+                                                            const existing = initialChecklist.find((i: any) => i.label === label)
+                                                            return existing || { label, status: 'not-tested' as const, link: '' }
+                                                        })
+                                                        const customItems = initialChecklist.filter((i: any) => !defaultChecklistItems.includes(i.label))
+                                                        setTempChecklist([...baseChecklist, ...customItems] as { label: string; status: 'pass' | 'fail' | 'not-tested'; link?: string }[])
+                                                    }}
+                                                    className="text-[10px] font-bold text-indigo-600 bg-indigo-50/50 hover:bg-indigo-100/80 px-2 py-1 rounded transition-colors uppercase tracking-tight flex items-center gap-1 w-fit"
+                                                >
+                                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                                    </svg>
+                                                    Checklist
+                                                </button>
                                             </td>
                                             <td className="px-6 py-5 text-right">
                                                 <div className="flex justify-end items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
@@ -614,6 +710,167 @@ export default function IncidentPage() {
                                     ) : (
                                         'Save Changes'
                                     )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Checklist Modal */}
+            {selectedChecklistRecord && (
+                <div className="fixed inset-0 z-[60] overflow-y-auto">
+                    <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                        <div
+                            className="fixed inset-0 transition-opacity"
+                            aria-hidden="true"
+                            onClick={() => setSelectedChecklistRecord(null)}
+                        >
+                            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+                        </div>
+
+                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                        <div className="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-100">
+                            <div className="bg-white px-8 pt-8 pb-6">
+                                <div className="flex items-center justify-between mb-8">
+                                    <div className="flex flex-col">
+                                        <h3 className="text-xl font-bold text-slate-900 leading-tight">
+                                            Follow-up Checklist
+                                        </h3>
+                                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mt-1">
+                                            {selectedChecklistRecord.incident_number}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => setSelectedChecklistRecord(null)}
+                                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                                    {tempChecklist?.map((item, index) => (
+                                        <div key={index} className="flex flex-col gap-3 p-4 rounded-2xl border border-slate-50 bg-slate-50/30 hover:bg-slate-50 transition-colors">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    {item.label === 'Asana' && (
+                                                        <div className="w-5 h-5 flex-shrink-0">
+                                                            <svg viewBox="0 0 24 24" className="w-full h-full">
+                                                                <path
+                                                                    fill="#F95D5C"
+                                                                    d="M18.78 12.653a5.22 5.22 0 1 0 0 10.44a5.22 5.22 0 0 0 0-10.44m-13.56 0a5.22 5.22 0 1 0 .001 10.439a5.22 5.22 0 0 0-.001-10.439m12-6.525a5.22 5.22 0 1 1-10.44 0a5.22 5.22 0 0 1 10.44 0"
+                                                                />
+                                                            </svg>
+                                                        </div>
+                                                    )}
+                                                    {item.label === 'Google Drive' && (
+                                                        <div className="w-5 h-5 flex-shrink-0">
+                                                            <svg viewBox="0 0 87.3 78" className="w-full h-full">
+                                                                <path fill="#0066da" d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" />
+                                                                <path fill="#00ac47" d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" />
+                                                                <path fill="#ea4335" d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" />
+                                                                <path fill="#00832d" d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" />
+                                                                <path fill="#2684fc" d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" />
+                                                                <path fill="#ffba00" d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" />
+                                                            </svg>
+                                                        </div>
+                                                    )}
+                                                    {item.label === 'Zendesk' && (
+                                                        <div className="w-5 h-5 flex-shrink-0">
+                                                            <svg viewBox="0 0 1393 1055.77" className="w-full h-full">
+                                                                <path fill="#03363d" d="M643.51 278.74v777H0zm0-278.74c0 177.57-143.84 321.41-321.41 321.41S0 177.57 0 0zm106 1055.77c0-177.57 143.84-321.41 321.41-321.41s321.41 143.84 321.41 321.41zm0-278.74V0H1393z" />
+                                                            </svg>
+                                                        </div>
+                                                    )}
+                                                    {!defaultChecklistItems.includes(item.label) && (
+                                                        <div className="w-5 h-5 flex items-center justify-center bg-slate-100 rounded-lg flex-shrink-0">
+                                                            <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                        </div>
+                                                    )}
+                                                    <span className="text-sm font-bold text-slate-700">{item.label}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {!defaultChecklistItems.includes(item.label) && (
+                                                        <button
+                                                            onClick={() => handleDeleteFollowUpItem(item.label)}
+                                                            className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all ml-2"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1">
+                                                    <input
+                                                        type="text"
+                                                        value={item.link || ''}
+                                                        onChange={(e) => handleFollowUpLinkChange(item.label, e.target.value)}
+                                                        placeholder="Paste link here"
+                                                        className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#dc3545]/20 focus:border-[#dc3545] outline-none transition-all"
+                                                    />
+                                                </div>
+                                                {item.link && (
+                                                    <a
+                                                        href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="p-2 bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                                                        title="Open link"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                        </svg>
+                                                    </a>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="mt-8 pt-6 border-t border-slate-100">
+                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Add Custom Item</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <input
+                                            type="text"
+                                            value={newItemLabel}
+                                            onChange={(e) => setNewItemLabel(e.target.value)}
+                                            placeholder="Label"
+                                            className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#dc3545]/20 focus:border-[#dc3545] outline-none transition-all"
+                                        />
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={newItemLink}
+                                                onChange={(e) => setNewItemLink(e.target.value)}
+                                                placeholder="Link"
+                                                className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#dc3545]/20 focus:border-[#dc3545] outline-none transition-all"
+                                            />
+                                            <button
+                                                onClick={handleAddCustomFollowUp}
+                                                disabled={!newItemLabel.trim()}
+                                                className="px-6 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all disabled:opacity-50"
+                                            >
+                                                Add
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-slate-50 px-8 py-5 flex justify-end">
+                                <button
+                                    className="px-8 py-3 bg-[#dc3545] text-white text-xs font-black uppercase tracking-[0.2em] rounded-xl hover:bg-[#bb2d3b] transition-all shadow-lg shadow-[#dc3545]/20"
+                                    onClick={handleSaveFollowUp}
+                                >
+                                    Save Follow-up
                                 </button>
                             </div>
                         </div>
